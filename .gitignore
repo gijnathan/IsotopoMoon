@@ -1,0 +1,18 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS junk
+.DS_Store
+
+# Output files
+*.csv
+*.zip
+*.png
+
+# VS Code config
+.vscode/
+
