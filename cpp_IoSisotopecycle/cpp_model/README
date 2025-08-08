@@ -1,0 +1,11 @@
+This project has three parts:
+
+headers/isotope_evolution.hpp – contains helper functions used in the model.
+
+running_model.cpp – runs the model and calls functions from the header.
+
+Makefile – builds the project and creates the run_model executable.
+
+To build and run:
+    make
+    ./run_model
