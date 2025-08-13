@@ -179,8 +179,8 @@ Io_SA = 4.174e13 # Io's surface area in m2
 sil_mag_rho = 3000. # silicate melt density in kg/m3
 
 # composition f Vienna Canyon Diablo Troilite
-VCDT = {"34":1./22.6436, #Ding+2001
-       "33":1./126.948, #Ding+2001
+VCDT = {"33":1./126.948, #Ding+2001
+       "34":1./22.6436, #Ding+2001
        "36":1./6515.} #Ding+2001
 
 ###################

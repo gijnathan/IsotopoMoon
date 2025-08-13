@@ -4,7 +4,7 @@ INCLUDES = -Iheaders
 
 all: run_model
 
-run_model: running_model.cpp
+run_model: running_model.cpp headers/isotope_evolution.hpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -o run_model running_model.cpp
 
 clean:
