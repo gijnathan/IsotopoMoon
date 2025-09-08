@@ -716,7 +716,8 @@ void iso_evo(
         {"ec", ec_r}
     };
 
-    AlphaSet alpha = compute_all_alphas("no", "no");
+    // get Set of all Alpha vals struct AlphaSet from header function, useful for the alphas called next
+    AlphaSet alpha = compute_all_alphas(nofrac, MAF);
 
     unordered_map<string, double> a33_plasma = { // this maps "pu" and "gr" etc to their fractionation factors for a33)
         {"pu", alpha.a33["pu"]}, {"gr", alpha.a33["gr"]}, {"th", alpha.a33["th"]},
@@ -746,6 +747,12 @@ void iso_evo(
 
     double pu_frac = (pr_r != 0.0) ? pu_r / pr_r : 0.0; // calculate pu fraction of total plasma reactions
 
+    // -------------------------
+    // Mass of silicate crust and fraction of frost remobilised
+    // -------------------------
+    double radius = 1822.6 * 1.e3;  // IO RADIUS (in meters
+    double mass_sil_C = (4.0 / 3.0) * M_PI * 
+        (pow(radius, 3) - pow(radius - thick_C, 3)) * sil_mag_rho;
 
 
     return; 
