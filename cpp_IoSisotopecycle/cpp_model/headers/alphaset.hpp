@@ -4,11 +4,12 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "isotope_evolution.hpp"  
+#include "alphaset_types.hpp"
 using namespace std;
 
-// Arguments: nofrac = "no" → use actual fractionation factors (i.e., do not override them as 1.0)
-//            MAF    = "no" → use canonical mass-dependent powers (i.e., no mass-anomalous fractionation)
+// Forward declaration of alphas() so compiler knows it exists
+double alphas(const string& process, int X, const string& nofrac, const string& MAF);
+
 inline AlphaSet compute_all_alphas(const string& nofrac, const string& MAF) {
     AlphaSet alpha;
 
@@ -35,4 +36,4 @@ inline AlphaSet compute_all_alphas(const string& nofrac, const string& MAF) {
     return alpha;
 }
 
-#endif // ALPHASET_HPP
+#endif

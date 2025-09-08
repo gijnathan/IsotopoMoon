@@ -7,7 +7,8 @@
 #include <type_traits>
 #include <tuple>      // <-- needed by tuple returns
 #include <iostream>   // <-- needed for cerr used in R2d
-#include "alphaset.hpp" // needed to get all alphas at once
+#include "alphaset_types.hpp"  // <- this is where AlphaSet lives
+#include "alphaset.hpp"        // <- this is where compute_all_alphas() lives, needed to get all alphas at once
 #pragma once
 #include <vector>
 using namespace std;
@@ -126,19 +127,6 @@ inline double alphas(const string& process, int X, const string& nofrac, const s
 
     return a;
 }
-
-/////////////////////////////////////////////////////////////////////////////////
-//// ALPHAS CALCULATIONS ////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-// ALPHA SET STRUCTURE (relies on ALPHASET_HPP)
-struct AlphaSet {
-    unordered_map<string, double> a33;
-    unordered_map<string, double> a34;
-    unordered_map<string, double> a36;
-};
-
-
 
 // ----------------------
 // Rate bounds structure
