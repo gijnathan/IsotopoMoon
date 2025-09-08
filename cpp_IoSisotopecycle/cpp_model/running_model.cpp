@@ -6,82 +6,86 @@
 #include "headers/isotope_evolution.hpp"
 using namespace std;
 
-// getting alphas for a specific process and isotope
-// Example inputs
-string nofrac = "no";
-string MAF = "no";
 
-// Alpha 34
-double a34_gr = alphas("gr", 34, nofrac, MAF);
-double a34_th = alphas("th", 34, nofrac, MAF);
-double a34_pu = alphas("pu", 34, nofrac, MAF);
-double a34_ed = alphas("ed", 34, nofrac, MAF);
-double a34_ac = alphas("ac", 34, nofrac, MAF);
-double a34_ei = alphas("ei", 34, nofrac, MAF);
-double a34_rc = alphas("rc", 34, nofrac, MAF);
-double a34_ec = alphas("ec", 34, nofrac, MAF);
-double a34_pi = alphas("pi", 34, nofrac, MAF);
-double a34_mm = alphas("mm", 34, nofrac, MAF);
-double a34_dg = alphas("dg", 34, nofrac, MAF);
-double a34_xt = alphas("xt", 34, nofrac, MAF);
-double a34_fr = alphas("fr", 34, nofrac, MAF);
-double a34_pd = alphas("pd", 34, nofrac, MAF);
-double a34_hg = alphas("hg", 34, nofrac, MAF);
-double a34_rm = alphas("rm", 34, nofrac, MAF);
-double a34_vp = alphas("vp", 34, nofrac, MAF);
-double a34_sq = alphas("sq", 34, nofrac, MAF);
-double a34_dm = alphas("dm", 34, nofrac, MAF);
-double a34_cf = alphas("cf", 34, nofrac, MAF);
-double a34_mo = a34_mm * a34_dg;
-double a34_pl = a34_mm * a34_xt;
 
-// Alpha 33
-double a33_gr = alphas("gr", 33, nofrac, MAF);
-double a33_th = alphas("th", 33, nofrac, MAF);
-double a33_pu = alphas("pu", 33, nofrac, MAF);
-double a33_ed = alphas("ed", 33, nofrac, MAF);
-double a33_ac = alphas("ac", 33, nofrac, MAF);
-double a33_ei = alphas("ei", 33, nofrac, MAF);
-double a33_rc = alphas("rc", 33, nofrac, MAF);
-double a33_ec = alphas("ec", 33, nofrac, MAF);
-double a33_pi = alphas("pi", 33, nofrac, MAF);
-double a33_mm = alphas("mm", 33, nofrac, MAF);
-double a33_dg = alphas("dg", 33, nofrac, MAF);
-double a33_xt = alphas("xt", 33, nofrac, MAF);
-double a33_fr = alphas("fr", 33, nofrac, MAF);
-double a33_pd = alphas("pd", 33, nofrac, MAF);
-double a33_hg = alphas("hg", 33, nofrac, MAF);
-double a33_rm = alphas("rm", 33, nofrac, MAF);
-double a33_vp = alphas("vp", 33, nofrac, MAF);
-double a33_sq = alphas("sq", 33, nofrac, MAF);
-double a33_dm = alphas("dm", 33, nofrac, MAF);
-double a33_cf = alphas("cf", 33, nofrac, MAF);
-double a33_mo = a33_mm * a33_dg;
-double a33_pl = a33_mm * a33_xt;
+// GETTING ALPHAS used to be done like this (below) but now it is in a header file that is then referenced in iso_evo()
+// // getting alphas for a specific process and isotope
+// // Example inputs
+// string nofrac = "no";
+// string MAF = "no";
 
-// Alpha 36
-double a36_gr = alphas("gr", 36, nofrac, MAF);
-double a36_th = alphas("th", 36, nofrac, MAF);
-double a36_pu = alphas("pu", 36, nofrac, MAF);
-double a36_ed = alphas("ed", 36, nofrac, MAF);
-double a36_ac = alphas("ac", 36, nofrac, MAF);
-double a36_ei = alphas("ei", 36, nofrac, MAF);
-double a36_rc = alphas("rc", 36, nofrac, MAF);
-double a36_ec = alphas("ec", 36, nofrac, MAF);
-double a36_pi = alphas("pi", 36, nofrac, MAF);
-double a36_mm = alphas("mm", 36, nofrac, MAF);
-double a36_dg = alphas("dg", 36, nofrac, MAF);
-double a36_xt = alphas("xt", 36, nofrac, MAF);
-double a36_fr = alphas("fr", 36, nofrac, MAF);
-double a36_pd = alphas("pd", 36, nofrac, MAF);
-double a36_hg = alphas("hg", 36, nofrac, MAF);
-double a36_rm = alphas("rm", 36, nofrac, MAF);
-double a36_vp = alphas("vp", 36, nofrac, MAF);
-double a36_sq = alphas("sq", 36, nofrac, MAF);
-double a36_dm = alphas("dm", 36, nofrac, MAF);
-double a36_cf = alphas("cf", 36, nofrac, MAF);
-double a36_mo = a36_mm * a36_dg;
-double a36_pl = a36_mm * a36_xt;
+// // Alpha 34
+// double a34_gr = alphas("gr", 34, nofrac, MAF);
+// double a34_th = alphas("th", 34, nofrac, MAF);
+// double a34_pu = alphas("pu", 34, nofrac, MAF);
+// double a34_ed = alphas("ed", 34, nofrac, MAF);
+// double a34_ac = alphas("ac", 34, nofrac, MAF);
+// double a34_ei = alphas("ei", 34, nofrac, MAF);
+// double a34_rc = alphas("rc", 34, nofrac, MAF);
+// double a34_ec = alphas("ec", 34, nofrac, MAF);
+// double a34_pi = alphas("pi", 34, nofrac, MAF);
+// double a34_mm = alphas("mm", 34, nofrac, MAF);
+// double a34_dg = alphas("dg", 34, nofrac, MAF);
+// double a34_xt = alphas("xt", 34, nofrac, MAF);
+// double a34_fr = alphas("fr", 34, nofrac, MAF);
+// double a34_pd = alphas("pd", 34, nofrac, MAF);
+// double a34_hg = alphas("hg", 34, nofrac, MAF);
+// double a34_rm = alphas("rm", 34, nofrac, MAF);
+// double a34_vp = alphas("vp", 34, nofrac, MAF);
+// double a34_sq = alphas("sq", 34, nofrac, MAF);
+// double a34_dm = alphas("dm", 34, nofrac, MAF);
+// double a34_cf = alphas("cf", 34, nofrac, MAF);
+// double a34_mo = a34_mm * a34_dg;
+// double a34_pl = a34_mm * a34_xt;
+
+// // Alpha 33
+// double a33_gr = alphas("gr", 33, nofrac, MAF);
+// double a33_th = alphas("th", 33, nofrac, MAF);
+// double a33_pu = alphas("pu", 33, nofrac, MAF);
+// double a33_ed = alphas("ed", 33, nofrac, MAF);
+// double a33_ac = alphas("ac", 33, nofrac, MAF);
+// double a33_ei = alphas("ei", 33, nofrac, MAF);
+// double a33_rc = alphas("rc", 33, nofrac, MAF);
+// double a33_ec = alphas("ec", 33, nofrac, MAF);
+// double a33_pi = alphas("pi", 33, nofrac, MAF);
+// double a33_mm = alphas("mm", 33, nofrac, MAF);
+// double a33_dg = alphas("dg", 33, nofrac, MAF);
+// double a33_xt = alphas("xt", 33, nofrac, MAF);
+// double a33_fr = alphas("fr", 33, nofrac, MAF);
+// double a33_pd = alphas("pd", 33, nofrac, MAF);
+// double a33_hg = alphas("hg", 33, nofrac, MAF);
+// double a33_rm = alphas("rm", 33, nofrac, MAF);
+// double a33_vp = alphas("vp", 33, nofrac, MAF);
+// double a33_sq = alphas("sq", 33, nofrac, MAF);
+// double a33_dm = alphas("dm", 33, nofrac, MAF);
+// double a33_cf = alphas("cf", 33, nofrac, MAF);
+// double a33_mo = a33_mm * a33_dg;
+// double a33_pl = a33_mm * a33_xt;
+
+// // Alpha 36
+// double a36_gr = alphas("gr", 36, nofrac, MAF);
+// double a36_th = alphas("th", 36, nofrac, MAF);
+// double a36_pu = alphas("pu", 36, nofrac, MAF);
+// double a36_ed = alphas("ed", 36, nofrac, MAF);
+// double a36_ac = alphas("ac", 36, nofrac, MAF);
+// double a36_ei = alphas("ei", 36, nofrac, MAF);
+// double a36_rc = alphas("rc", 36, nofrac, MAF);
+// double a36_ec = alphas("ec", 36, nofrac, MAF);
+// double a36_pi = alphas("pi", 36, nofrac, MAF);
+// double a36_mm = alphas("mm", 36, nofrac, MAF);
+// double a36_dg = alphas("dg", 36, nofrac, MAF);
+// double a36_xt = alphas("xt", 36, nofrac, MAF);
+// double a36_fr = alphas("fr", 36, nofrac, MAF);
+// double a36_pd = alphas("pd", 36, nofrac, MAF);
+// double a36_hg = alphas("hg", 36, nofrac, MAF);
+// double a36_rm = alphas("rm", 36, nofrac, MAF);
+// double a36_vp = alphas("vp", 36, nofrac, MAF);
+// double a36_sq = alphas("sq", 36, nofrac, MAF);
+// double a36_dm = alphas("dm", 36, nofrac, MAF);
+// double a36_cf = alphas("cf", 36, nofrac, MAF);
+// double a36_mo = a36_mm * a36_dg;
+// double a36_pl = a36_mm * a36_xt;
+
 
 
 

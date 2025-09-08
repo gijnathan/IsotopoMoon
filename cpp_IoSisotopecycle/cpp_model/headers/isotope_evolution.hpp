@@ -7,6 +7,9 @@
 #include <type_traits>
 #include <tuple>      // <-- needed by tuple returns
 #include <iostream>   // <-- needed for cerr used in R2d
+#include "alphaset.hpp" // needed to get all alphas at once
+#pragma once
+#include <vector>
 using namespace std;
 
 // ###############
@@ -123,6 +126,18 @@ inline double alphas(const string& process, int X, const string& nofrac, const s
 
     return a;
 }
+
+/////////////////////////////////////////////////////////////////////////////////
+//// ALPHAS CALCULATIONS ////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+// ALPHA SET STRUCTURE (relies on ALPHASET_HPP)
+struct AlphaSet {
+    unordered_map<string, double> a33;
+    unordered_map<string, double> a34;
+    unordered_map<string, double> a36;
+};
+
 
 
 // ----------------------
@@ -635,6 +650,123 @@ fractionate(const FractionateConsts& c,
 
 // FUNCTION: main function to calculate isotope evolution
 // iso_evo() - main function to calculate isotope evolution
+void iso_evo(
+    double t_step_Myr,
+    double end_time_Myr,
+    double nr_step,
+    double nr_tol,
+
+    double DM_mass_f,
+    double DM_mass_f_sil,
+    string DM_ST,
+    double DM_33d, double DM_34d, double DM_36d,
+
+    double M_mass_f,
+    double M_mass_f_sil,
+    string M_ST,
+    double M_33d, double M_34d, double M_36d,
+
+    double F_mass_f,
+    string F_ST,
+    double F_33d, double F_34d, double F_36d,
+
+    double SS_mass_f,
+    string SS_ST,
+    double SS_33d, double SS_34d, double SS_36d,
+
+    string S_ST,
+    double S_33d, double S_34d, double S_36d,
+
+    const unordered_map<string, double>& rate_f,
+    const string& oscillate,
+
+    double resurf_cm_yr,
+    double sil_mag_S,
+    double thick_C,
+
+    double f_S2,
+    double f_pl2mo,
+    double f_sq,
+    double f_deep,
+    double f_remobilised,
+    double f_pu,
+
+    // # options for calculating fractionation factors
+    // nofrac = "no" # if "yes", all fractionation factors = 1 (i.e., no fractionation); if "no", fractionation factors are pre-determined values
+    // MAF = "no" # if "yes", mass-anomalous (i.e., with powers not equal to canonical values) is possible; if "no", fractionation factors follow canonical power laws
+    const string& nofrac, const string& MAF 
+    
+)
+{
+    // === TIMESTAMP ===
+    auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    cout << "start " << ctime(&now);  // includes newline
+
+    // === TIME SETUP ===
+    double time_step = t_step_Myr * 60.0 * 60.0 * 24.0 * 365.0 * 1.0e6;  // seconds per timestep
+    int end = static_cast<int>((end_time_Myr + t_step_Myr) / t_step_Myr);  // number of steps
+
+    // === RATE CONSTANTS (mol S / s) plasma and photodissociation ===
+    double pd_r = kgs2mSs(calc_rate(rate_f.at("pd"),  rate_kgs.at("pd").min,  rate_kgs.at("pd").max));
+    double pi_r =         calc_rate(rate_f.at("pi"),  rate_kgs.at("pi").min,  rate_kgs.at("pi").max);
+    double ei_r =         calc_rate(rate_f.at("ei"),  rate_kgs.at("ei").min,  rate_kgs.at("ei").max);
+    double ed_r =         calc_rate(rate_f.at("ed"),  rate_kgs.at("ed").min,  rate_kgs.at("ed").max);
+    double ac_r =         calc_rate(rate_f.at("ac"),  rate_kgs.at("ac").min,  rate_kgs.at("ac").max);
+    double rc_r =         calc_rate(rate_f.at("rc"),  rate_kgs.at("rc").min,  rate_kgs.at("rc").max);
+    double ec_r =         calc_rate(rate_f.at("ec"),  rate_kgs.at("ec").min,  rate_kgs.at("ec").max);
+
+    // === PLASMA REACTIONS & FRACTIONATION ===
+    double pr_r = pi_r + ei_r + ed_r + ac_r + rc_r + ec_r; // total plasma reaction rate is sum of pi_r, ei_r, ed_r, ac_r, rc_r, ec_r
+
+    unordered_map<string, double> rates_plasma = { //this maps "pr" and "pi" etc to their rates (plasma rates)
+        {"pr", pr_r},
+        {"pi", pi_r},
+        {"ei", ei_r},
+        {"ed", ed_r},
+        {"ac", ac_r},
+        {"rc", rc_r},
+        {"ec", ec_r}
+    };
+
+    AlphaSet alpha = compute_all_alphas("no", "no");
+
+    unordered_map<string, double> a33_plasma = { // this maps "pu" and "gr" etc to their fractionation factors for a33)
+        {"pu", alpha.a33["pu"]}, {"gr", alpha.a33["gr"]}, {"th", alpha.a33["th"]},
+        {"ed", alpha.a33["ed"]}, {"ac", alpha.a33["ac"]}, {"ei", alpha.a33["ei"]},
+        {"rc", alpha.a33["rc"]}, {"ec", alpha.a33["ec"]}, {"pi", alpha.a33["pi"]}
+    };
+
+    unordered_map<string, double> a34_plasma = { // this maps "pu" and "gr" etc to their fractionation factors for a34
+        {"pu", alpha.a34["pu"]}, {"gr", alpha.a34["gr"]}, {"th", alpha.a34["th"]},
+        {"ed", alpha.a34["ed"]}, {"ac", alpha.a34["ac"]}, {"ei", alpha.a34["ei"]},
+        {"rc", alpha.a34["rc"]}, {"ec", alpha.a34["ec"]}, {"pi", alpha.a34["pi"]}
+    };
+
+    unordered_map<string, double> a36_plasma = { // this maps "pu" and "gr" etc to their fractionation factors for a36
+        {"pu", alpha.a36["pu"]}, {"gr", alpha.a36["gr"]}, {"th", alpha.a36["th"]},
+        {"ed", alpha.a36["ed"]}, {"ac", alpha.a36["ac"]}, {"ei", alpha.a36["ei"]},
+        {"rc", alpha.a36["rc"]}, {"ec", alpha.a36["ec"]}, {"pi", alpha.a36["pi"]}
+    };
+
+    double a33_pr = a_pr(a33_plasma, rates_plasma); // weighted average fractionation factor for 33S in plasma reactions
+    double a34_pr = a_pr(a34_plasma, rates_plasma); // weighted average fractionation factor for 34S in plasma reactions
+    double a36_pr = a_pr(a36_plasma, rates_plasma); // weighted average fractionation factor for 36S in plasma reactions
+
+    double pu_r = calc_rate(f_pu, rate_kgs.at("pu").min, pr_r); // pu rate in mol S / s
+    pu_r = kgs2mSs(pu_r); // convert pu rate to mol S / s
+    pr_r = kgs2mSs(pr_r); // convert pr rate to mol S / s
+
+    double pu_frac = (pr_r != 0.0) ? pu_r / pr_r : 0.0; // calculate pu fraction of total plasma reactions
+
+
+
+    return; 
+}
+
+
+
+
+
 
 ///////////////////////////////////////
 ////// RAYLEIGH BUT BOX MODEL //////
