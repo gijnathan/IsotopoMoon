@@ -9,6 +9,7 @@
 #include <iostream>   // <-- needed for cerr used in R2d
 #include "alphaset_types.hpp"  // <- this is where AlphaSet lives
 #include "alphaset.hpp"        // <- this is where compute_all_alphas() lives, needed to get all alphas at once
+#include "helpers.hpp"     // <- this is where MaybeDouble lives to handle "N" or numeric f inputs
 #pragma once
 #include <vector>
 using namespace std;
@@ -644,25 +645,29 @@ void iso_evo(
     double nr_step,
     double nr_tol,
 
-    double DM_mass_f,
-    double DM_mass_f_sil,
-    string DM_ST,
+    // deep mantle variables
+    MaybeDouble DM_mass_f,
+    MaybeDouble DM_mass_f_sil,
+    MaybeDouble DM_ST,
     double DM_33d, double DM_34d, double DM_36d,
 
-    double M_mass_f,
-    double M_mass_f_sil,
-    string M_ST,
+    // mantle variables
+    MaybeDouble M_mass_f,
+    MaybeDouble M_mass_f_sil,
+    MaybeDouble M_ST,
     double M_33d, double M_34d, double M_36d,
 
-    double F_mass_f,
-    string F_ST,
+    // crustal frost variables
+    MaybeDouble F_mass_f,
+    MaybeDouble F_ST,
     double F_33d, double F_34d, double F_36d,
 
-    double SS_mass_f,
-    string SS_ST,
+    // crustal sulfate variables
+    MaybeDouble SS_mass_f,
+    MaybeDouble SS_ST,
     double SS_33d, double SS_34d, double SS_36d,
 
-    string S_ST,
+    MaybeDouble S_ST,
     double S_33d, double S_34d, double S_36d,
 
     const unordered_map<string, double>& rate_f,
@@ -753,10 +758,262 @@ void iso_evo(
     double radius = 1822.6 * 1.e3;  // IO RADIUS (in meters
     double mass_sil_C = (4.0 / 3.0) * M_PI * 
         (pow(radius, 3) - pow(radius - thick_C, 3)) * sil_mag_rho;
+    
+    // -------------------------
+    // MANTLE INITIAL RESERVOIR: INITIAL RESERVOIR NUMBERS
+    // -------------------------
+
+    // Resolve M_ST if still flagged as "N"
+    if (M_ST.flag == "N") {
+        M_ST.value = M_mass_i_min + M_mass_f * (M_mass_i_max - M_mass_i_min);
+        M_ST.flag = "Y";  // Optional: mark as resolved
+    }
+
+    // Compute silicate mantle mass (subtracting crust mass)
+    double M_mass = (M_mass_i_min_sil + M_mass_f_sil * (M_mass_i_max_sil - M_mass_i_min_sil)) - mass_sil_C;
+
+    // Sulfur concentration in mantle (mol/kg)
+    double S_conc_M = S_conc(M_ST.value, M_mass);
+
+    // Call initial_reservoir for mantle
+    double logM_ST, M_33R, M_34R, M_36R;
+    double M_32T_i, M_33T_i, M_34T_i, M_36T_i;
+    double M_33D, M_36D;
+    double M_32S, M_33S, M_34S, M_36S;
+
+    tie(logM_ST, M_33R, M_34R, M_36R,
+        M_32T_i, M_33T_i, M_34T_i, M_36T_i,
+        M_33D, M_36D,
+        M_32S, M_33S, M_34S, M_36S) = initial_reservoir(M_ST.value, M_33d, M_34d, M_36d);
 
 
-    return; 
-}
+    // -------------------------
+    // DEEP MANTLE INITIAL RESERVOIR
+    // -------------------------
+
+    // Resolve DM_ST if flagged as "N"
+    if (DM_ST.flag == "N") {
+        if (DM_mass_f.flag != "N") {
+            DM_ST.value = M_mass_i_min + DM_mass_f.value * (M_mass_i_max - M_mass_i_min);
+        } else {
+            DM_ST.value = 0.0;
+        }
+        DM_ST.flag = "Y";
+    }
+
+    // Resolve DM_mass using silicate-only bounds
+    double DM_mass;
+    if (DM_mass_f_sil.flag != "N") {
+        DM_mass = M_mass_i_min_sil + DM_mass_f_sil.value * (M_mass_i_max_sil - M_mass_i_min_sil);
+    } else {
+        DM_mass = 0.0;
+    }
+
+    // Call initial_reservoir for deep mantle
+    double logDM_ST, DM_33R, DM_34R, DM_36R;
+    double DM_32T_i, DM_33T_i, DM_34T_i, DM_36T_i;
+    double DM_33D, DM_36D;
+    double DM_32S, DM_33S, DM_34S, DM_36S;
+
+    tie(logDM_ST, DM_33R, DM_34R, DM_36R,
+        DM_32T_i, DM_33T_i, DM_34T_i, DM_36T_i,
+        DM_33D, DM_36D,
+        DM_32S, DM_33S, DM_34S, DM_36S) = initial_reservoir(DM_ST.value, DM_33d, DM_34d, DM_36d);
+    
+    // -------------------------
+    // CRUSTAL FROSTS INITIAL RESERVOIR
+    // -------------------------
+    if (F_ST.flag == "N") {
+        F_ST.value = F_mass_i_min + F_mass_f.value * (F_mass_i_max - F_mass_i_min);
+        F_ST.flag = "Y";
+    }
+
+    double logF_ST, F_33R, F_34R, F_36R;
+    double F_32T_i, F_33T_i, F_34T_i, F_36T_i;
+    double F_33D, F_36D;
+    double F_32S, F_33S, F_34S, F_36S;
+
+    tie(logF_ST, F_33R, F_34R, F_36R,
+        F_32T_i, F_33T_i, F_34T_i, F_36T_i,
+        F_33D, F_36D,
+        F_32S, F_33S, F_34S, F_36S) = initial_reservoir(F_ST.value, F_33d, F_34d, F_36d);
+
+
+    // -------------------------
+    // CRUSTAL SULFATES INITIAL RESERVOIR
+    // -------------------------
+    if (SS_ST.flag == "N") {
+        SS_ST.value = SS_mass_i_min + SS_mass_f.value * (SS_mass_i_max - SS_mass_i_min);
+        SS_ST.flag = "Y";
+    }
+
+    double logSS_ST, SS_33R, SS_34R, SS_36R;
+    double SS_32T_i, SS_33T_i, SS_34T_i, SS_36T_i;
+    double SS_33D, SS_36D;
+    double SS_32S, SS_33S, SS_34S, SS_36S;
+
+    tie(logSS_ST, SS_33R, SS_34R, SS_36R,
+        SS_32T_i, SS_33T_i, SS_34T_i, SS_36T_i,
+        SS_33D, SS_36D,
+        SS_32S, SS_33S, SS_34S, SS_36S) = initial_reservoir(SS_ST.value, SS_33d, SS_34d, SS_36d);
+
+
+    // -------------------------
+    // TOTAL SURFACE SULFUR INITIAL RESERVOIR
+    // -------------------------
+    if (S_ST.flag == "N") {
+        S_ST.value = 0.0;
+        S_ST.flag = "Y";
+    }
+
+    double logS_ST, S_33R, S_34R, S_36R;
+    double S_32T_i, S_33T_i, S_34T_i, S_36T_i;
+    double S_33D, S_36D;
+    double S_32S, S_33S, S_34S, S_36S;
+
+    tie(logS_ST, S_33R, S_34R, S_36R,
+        S_32T_i, S_33T_i, S_34T_i, S_36T_i,
+        S_33D, S_36D,
+        S_32S, S_33S, S_34S, S_36S) = initial_reservoir(S_ST.value, S_33d, S_34d, S_36d);
+
+    // -------------------------
+    // MASS BALANCE CALCULATIONS - INITIAL STATE
+    // -------------------------
+    double Io_ST_initial = reservoir_totals(M_ST.value, DM_ST.value, F_ST.value, SS_ST.value, S_ST.value);
+    double Io_32S_initial = reservoir_totals(M_32S, DM_32S, F_32S, SS_32S, S_32S);
+    double Io_33S_initial = reservoir_totals(M_33S, DM_33S, F_33S, SS_33S, S_33S);
+    double Io_34S_initial = reservoir_totals(M_34S, DM_34S, F_34S, SS_34S, S_34S);
+    double Io_36S_initial = reservoir_totals(M_36S, DM_36S, F_36S, SS_36S, S_36S);
+
+    // Mass balance checks (all using initial totals against themselves at t = 0)
+    double mbST   = mass_balance(Io_ST_initial, Io_ST_initial);
+    double mb32S  = mass_balance(Io_32S_initial, Io_32S_initial);
+    double mb33S  = mass_balance(Io_33S_initial, Io_33S_initial);
+    double mb34S  = mass_balance(Io_34S_initial, Io_34S_initial);
+    double mb36S  = mass_balance(Io_36S_initial, Io_36S_initial);
+
+    // -------------------------
+    // INITIAL TIME STEP
+    // -------------------------
+
+    int n = 0;
+    double t_s = static_cast<double>(n) * t_step_Myr;     // time in Myr
+    double t_s_Myr = t_s;                                  // (duplicate for clarity with Python)
+    
+    // IN PYTHON THE RESULTS ARE STORED IN A DATAFRAME LIKE THIS: 
+    // # set up results table
+    // results = pd.DataFrame([["rate factor pd","rate factor pi","rate factor ei","rate factor ed","rate factor ac",
+    //                      "rate factor rc", "rate factor ec","resurfacing rate (cm/yr)","sil mag S (wf)", "crustal thickness (m)",
+    //                      "fraction of f_crust_returned that is remolised","S2 to SO2","plutons from mantle melting","sulfate sequestration","deep mantle - fraction of mantle melting","mass silicate mantle"]])
+    // results2 = pd.DataFrame([[rate_f["pd"],rate_f["pi"],rate_f["ei"],rate_f["ed"],rate_f["ac"],rate_f["rc"], 
+    //                     rate_f["ec"],resurf_cm_yr,sil_mag_S, thick_C,f_remobilised,f_S2,f_pl2mo,f_sq,f_deep,M_mass]])
+    // results = pd.concat([results, results2], ignore_index=True)
+    // results2 = pd.DataFrame([["time step","time (Myr)","[S] mantle",
+    //                      "d34S M","d34S F","d34S SS","d34S S","d34S DM","d34S og","d34S iS",
+    //                      "d33S M","d33S F","d33S SS", "d33S S","d33S DM","d33S og","d33S iS",
+    //                      "d36S M","d36S F","d36S SS","d36S S","d36S DM","d36S og","d36S iS",
+    //                      "D33S M","D33S F","D33S SS","D33S S","D33S DM","D33S og","D33S iS",
+    //                      "D36S M","D36S F","D36S SS","D36S S","D36S DM","D36S og","D36S iS",
+    //                      "ST M","ST F", "ST SS","ST S","ST DM",
+    //                      "log ST M","log ST F", "log ST SS","log ST S","log ST DM",
+    //                      "F mo", "F fr", "F pr","F pu", "F sn", "F pd", "F hg", "F bu", "F pl","F rs","F sq","F ao","F dm",
+    //                      "mo/mo+ca", "bu/bu+pl", 
+    //                      "mbST","mb32","mb33","mb34","mb36","",
+    //                      "R33 M", "R33 F", "R33 SS","R33 S","R33 DM","R33 og","R33 iS",
+    //                      "R34 M", "R34 F", "R34 SS","R34 S","R34 DM","R34 og","R34 iS",
+    //                      "R36 M", "R36 F", "R36 SS","R36 S","R36 DM","R36 og","R36 iS",
+    //                      "a33_bu", "a34_bu", "a36_bu",
+    //                      "a33_escape-burial", "a34_escape-burial", "a36_escape-burial"]])
+    // results = pd.concat([results, results2], ignore_index=True)
+    // results2 = pd.DataFrame([[n,t_s,S_conc_M,
+    //                      M_34d,F_34d,SS_34d,S_34d,DM_34d,"","",
+    //                      M_33d,F_33d,SS_33d,S_33d,DM_33d,"","",
+    //                      M_36d,F_36d,SS_36d,S_36d,DM_36d,"","",
+    //                      M_33D,F_33D,SS_33D,S_33D,DM_33D,"","",
+    //                      M_36D,F_36D,SS_36D,S_36D,DM_36D,"","",
+    //                      M_ST,F_ST,SS_ST,S_ST,DM_ST,
+    //                      logM_ST,logF_ST,logSS_ST,logS_ST,logDM_ST,
+    //                      "","","","","","","","","","","","","",
+    //                      "","",
+    //                      mbST,mb32S,mb33S,mb34S,mb36S,
+    //                      "",
+    //                      M_33R, F_33R, SS_33R, S_33R, DM_33R,"","",
+    //                      M_34R, F_34R, SS_34R, S_34R, DM_36R,"","",
+    //                      M_36R, F_36R, SS_36R, S_36R, DM_36R,"","",
+    //                      "","","","","","","","",""]])         
+    // results = pd.concat([results, results2], ignore_index=True)
+    // results.to_csv('time_evolution.csv', index=False, header=False)
+    
+    // IN C++ WE WILL MAKE A STRUCT TO HOLD ALL THE VARIABLES AND THEN OUTPUT TO A CSV AT THE END
+
+    struct SulfurState {
+        // Time tracking
+        double t_step = 0.0;       // Integer step
+        double t_step_Myr = 0.0;   // Time in Myr
+
+        // Mantle sulfur concentration (mol/kg)
+        double S_conc_M = 0.0;
+
+        // δ values (‰) - delta values by reservoir
+        double M_34d = 0.0, F_34d = 0.0, SS_34d = 0.0, S_34d = 0.0, DM_34d = 0.0;
+        double M_33d = 0.0, F_33d = 0.0, SS_33d = 0.0, S_33d = 0.0, DM_33d = 0.0;
+        double M_36d = 0.0, F_36d = 0.0, SS_36d = 0.0, S_36d = 0.0, DM_36d = 0.0;
+
+        // Δ values (‰) - capital D
+        double M_33D = 0.0, F_33D = 0.0, SS_33D = 0.0, S_33D = 0.0, DM_33D = 0.0;
+        double M_36D = 0.0, F_36D = 0.0, SS_36D = 0.0, S_36D = 0.0, DM_36D = 0.0;
+
+        // ST (total sulfur) per reservoir
+        double M_ST = 0.0, F_ST = 0.0, SS_ST = 0.0, S_ST = 0.0, DM_ST = 0.0;
+
+        // log(ST) per reservoir
+        double logM_ST = 0.0, logF_ST = 0.0, logSS_ST = 0.0, logS_ST = 0.0, logDM_ST = 0.0;
+
+        // Mass balance terms
+        double mbST = 0.0, mb32S = 0.0, mb33S = 0.0, mb34S = 0.0, mb36S = 0.0;
+
+        // Reference isotope ratios
+        double M_33R = 0.0, F_33R = 0.0, SS_33R = 0.0, S_33R = 0.0, DM_33R = 0.0;
+        double M_34R = 0.0, F_34R = 0.0, SS_34R = 0.0, S_34R = 0.0, DM_34R = 0.0;
+        double M_36R = 0.0, F_36R = 0.0, SS_36R = 0.0, S_36R = 0.0, DM_36R = 0.0;
+
+        // Optional exists to include the following to mirror the extra Python columns:
+        // - Escape-burial fractionation factors (a33, a34, a36)
+        // - Fluxes (e.g., F_mo, F_pd, etc.)
+        // - Derived ratios like mo/(mo+ca), bu/(bu+pl)
+        // These can be added later 
+    };
+
+    // NOW THE BIG LOOP:
+    // Purpose of loop: evolve sulfur reservoirs over time
+    // vector<SulfurState> results; // to hold results at each timestep
+    // Loop sections: 
+    // 1. timesteps
+    // 2. oscillating resufacing rate
+    // 3. mantle and deep mantle melting (rates)
+    // 4. crustal and atmospheric rates
+    // 5. pl and rs fluxes
+    // 6. flux for snow
+    // 7. rates conversion to fluxes -- converted to flux (mol per timestep)
+    // 8. "fractions", giving ratios of volcanic S from outgassing and S from atmosphere vs total
+    // 9. burial and escape (effects on 33,34,36 fractionation)
+    // 10. mo, rf, dm isotope inputs. 
+    // 11. total input calculation 
+    // 12. homogenous gas
+    // 13. sulfate sequestration
+    // 14. snow if negative
+    // 15. atmospheric outgassing
+    // 16. reservoirs fractionate
+    // 17. instatntaneous isotope ratios of space reservoir
+    // 18. plutonic and silicate/sulfate return
+    // 19. update reservoirs (M_XYS, DM_XYS, F_XYS, SS_XYS, S_XYS)
+    // 20. mass balance checks
+    // 21. store results in struct and push to vector
+    
+
+
+//     return; 
+// }
 
 
 
