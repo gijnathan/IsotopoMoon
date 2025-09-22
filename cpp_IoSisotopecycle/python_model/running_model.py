@@ -10,7 +10,7 @@ import time
 ##################################################################
 
 t_step_Myr = 1.e-1 # time step in Myr
-end_time_Myr = 200 #4570 # end time in Myr
+end_time_Myr = 20 #200 #4570 # end time in Myr
 nr_step = 1.
 nr_tol = 1.e5
 
@@ -67,6 +67,30 @@ f_deep = 0. # fraction of mantle melting rate that is added from the deep mantle
 f_remobilised = 1. # fraction of f_crust_returned that is remobilised [1.]
 f_pu = 0.5 # fraction of material that could be lost to space that is [0.5]
 
+def print_inputs(
+    t_step_Myr, end_time_Myr, nr_step, nr_tol,
+    DM_mass_f, DM_mass_f_sil, DM_ST, DM_33d, DM_34d, DM_36d,
+    M_mass_f, M_mass_f_sil, M_ST, M_33d, M_34d, M_36d,
+    F_mass_f, F_ST, F_33d, F_34d, F_36d,
+    SS_mass_f, SS_ST, SS_33d, SS_34d, SS_36d,
+    S_ST, S_33d, S_34d, S_36d,
+    rate_f, oscillate, resurf_cm_yr, sil_mag_S, thick_C,
+    f_S2, f_pl2mo, f_sq, f_deep, f_remobilised, f_pu
+):
+    print("\n=== PYTHON MODEL INPUTS ===")
+    print(f"t_step_Myr = {t_step_Myr}, end_time_Myr = {end_time_Myr}, nr_step = {nr_step}, nr_tol = {nr_tol}")
+    print(f"DM_mass_f={DM_mass_f}, DM_mass_f_sil={DM_mass_f_sil}, DM_ST={DM_ST}, DM_33d={DM_33d}, DM_34d={DM_34d}, DM_36d={DM_36d}")
+    print(f"M_mass_f={M_mass_f}, M_mass_f_sil={M_mass_f_sil}, M_ST={M_ST}, M_33d={M_33d}, M_34d={M_34d}, M_36d={M_36d}")
+    print(f"F_mass_f={F_mass_f}, F_ST={F_ST}, F_33d={F_33d}, F_34d={F_34d}, F_36d={F_36d}")
+    print(f"SS_mass_f={SS_mass_f}, SS_ST={SS_ST}, SS_33d={SS_33d}, SS_34d={SS_34d}, SS_36d={SS_36d}")
+    print(f"S_ST={S_ST}, S_33d={S_33d}, S_34d={S_34d}, S_36d={S_36d}")
+    print(f"rate_f={rate_f}")
+    print(f"oscillate={oscillate}, resurf_cm_yr={resurf_cm_yr}, sil_mag_S={sil_mag_S}, thick_C={thick_C}")
+    print(f"f_S2={f_S2}, f_pl2mo={f_pl2mo}, f_sq={f_sq}, f_deep={f_deep}, f_remobilised={f_remobilised}, f_pu={f_pu}")
+    print("===========================\n")
+
+
+
 
 ##################################################################
 #                        RUN MODEL                               #
@@ -79,7 +103,9 @@ print("Start time:", datetime.datetime.now().strftime("%Y-%m-%d %H:%M"))
 # Call the model
 
 try:
-    ie.iso_evo(
+
+    # right before iso_evo call
+    print_inputs(
         t_step_Myr, end_time_Myr, nr_step, nr_tol,
         DM_mass_f, DM_mass_f_sil, DM_ST, DM_33d, DM_34d, DM_36d,
         M_mass_f, M_mass_f_sil, M_ST, M_33d, M_34d, M_36d,
@@ -88,6 +114,19 @@ try:
         S_ST, S_33d, S_34d, S_36d,
         rate_f, oscillate, resurf_cm_yr, sil_mag_S, thick_C,
         f_S2, f_pl2mo, f_sq, f_deep, f_remobilised, f_pu
+    )
+
+    ie.iso_evo(
+        t_step_Myr, end_time_Myr, nr_step, nr_tol, # time and newton raphson
+
+        DM_mass_f, DM_mass_f_sil, DM_ST, DM_33d, DM_34d, DM_36d, # DM
+        M_mass_f, M_mass_f_sil, M_ST, M_33d, M_34d, M_36d, # M
+        F_mass_f, F_ST, F_33d, F_34d, F_36d, # F
+        SS_mass_f, SS_ST, SS_33d, SS_34d, SS_36d, # SS
+        S_ST, S_33d, S_34d, S_36d, # S
+
+        rate_f, oscillate, resurf_cm_yr, sil_mag_S, thick_C, # other parameters (rates, resurfacing, silicate melt S content, crustal thickness)
+        f_S2, f_pl2mo, f_sq, f_deep, f_remobilised, f_pu # fractions (S2/SO2, plutonic/magmatic, sulfate sequestration, deep mantle, remobilised crust, space loss
     )
 
 except KeyboardInterrupt:

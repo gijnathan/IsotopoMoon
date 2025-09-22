@@ -14,7 +14,7 @@ inline AlphaSet compute_all_alphas(const string& nofrac, const string& MAF) {
     AlphaSet alpha;
 
     vector<string> processes = {
-        "pu", "gr", "th", "ed", "ac", "ei", "rc", "ec", "pi",
+        "gr", "th", "pu", "ed", "ac", "ei", "rc", "ec", "pi",
         "mm", "dg", "xt", "fr", "pd", "hg", "rm", "vp", "sq", "dm", "cf"
     };
 

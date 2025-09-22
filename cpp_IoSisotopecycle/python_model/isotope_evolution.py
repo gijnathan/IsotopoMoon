@@ -331,6 +331,7 @@ def deep_mantle(DM,dm): # mantle
     DM_ = DM - dm # deep mantle mixing
     return DM_
 def frost(F,fr,bu,hg): # crustal frost
+    # print(f"Inside frost(): F: {F:.16e}  fr: {fr:.16e}  bu: {bu:.16e}  hg: {hg:.16e}")
     F_ = F - fr + bu + hg # frost remobilisation, burial
     return F_
 def silsulf(SS,rs,sq,pl): # crustal frost
@@ -483,7 +484,28 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
     if F_ST == "N":
         F_ST = initial_mass(F_mass_i_min,F_mass_i_max,F_mass_f) 
     logF_ST, F_33R, F_34R, F_36R, F_32T_i, F_33T_i, F_34T_i, F_36T_i, F_33D, F_36D, F_32S, F_33S, F_34S, F_36S = initial_reservoir(F_ST,F_33d,F_34d,F_36d)
-    
+    # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    # print("HERE F_ST",F_ST)
+    # print("F_mass_i_min",F_mass_i_min)
+    # print("F_mass_i_max",F_mass_i_max)
+
+    # print("logF_ST: ", logF_ST)
+    # print("F_33R: ", F_33R)
+    # print("F_34R: ", F_34R)
+    # print("F_36R: ", F_36R)
+    # print("F_32T_i: ", F_32T_i)
+    # print("F_33T_i: ", F_33T_i)
+    # print("F_34T_i: ", F_34T_i)
+    # print("F_36T_i: ", F_36T_i)
+    # print("F_33D: ", F_33D)
+    # print("F_36D: ", F_36D)
+    # print("F_32S: ", F_32S)
+    # print("F_33S: ", F_33S)
+    # print("F_34S: ", F_34S)
+    # print("F_36S: ", F_36S)
+
+
+    # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     # crustal sulfates
     if SS_ST == "N":    
         SS_ST = initial_mass(SS_mass_i_min,SS_mass_i_max,SS_mass_f)
@@ -552,13 +574,52 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                          "","","","","","","","",""]])         
     results = pd.concat([results, results2], ignore_index=True)
     results.to_csv('time_evolution.csv', index=False, header=False)
+    print("Initial F_34d",F_34d)
+    # // Loop sections: 
+    # // 1. timesteps
+    # // 2. oscillating resufacing rate
+    # // 3. mantle and deep mantle melting (rates)
+    # // 4. crustal and atmospheric rates
+    # // 5. pl and rs fluxes
+    # // 6. flux for snow
+    # // 7. rates conversion to fluxes -- converted to flux (mol per timestep)
+    # // 8. "fractions", giving ratios of volcanic S from outgassing and S from atmosphere vs total
+    # // 9. burial and escape (effects on 33,34,36 fractionation)
+    # // 10. mo, rf, dm isotope inputs. 
+    # // 11. total input calculation 
+    # // 12. homogenous gas
+    # // 13. sulfate sequestration
+    # // 14. snow if negative
+    # // 15. atmospheric outgassing
+    # // 16. reservoirs fractionate
+    # // 17. instatntaneous isotope ratios of space reservoir
+    # // 18. plutonic and silicate/sulfate return
+    # // 19. update reservoirs (M_XYS, DM_XYS, F_XYS, SS_XYS, S_XYS)
+    # // 20. mass balance checks
+    # // 21. store results in struct and push to vector
 
+    # // 1. timesteps
+    print("HERE we start time looping")
     for n in range(1,end,1): 
         t_s = n*time_step
         t_s_Myr = n*t_step_Myr
+        if n < 5:
+            F_34d_val = float(F_34d) if F_34d != '' else 0.0
+            print("\n")
+            print(f"Time: {float(t_s_Myr):.17f} Myr | F_34d: {F_34d_val:.17f} | Time: {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')}")
+            # print("     time step (Myr):  = ",t_s_Myr)
+            # print("     F_34d:  = ",F_34d)
+            # print("     M_ST:  = ",M_ST)
+            # print("     DM_ST:  = ",DM_ST)
+            # print("     F_ST:  = ",F_ST)
+            # print("     SS_ST:  = ",SS_ST)
+            # print("     S_ST:  = ",S_ST)
+
+        
         if(n % 1000==0):
             print(t_s_Myr,F_34d,datetime.datetime.now())
-    
+        
+        # // 2. oscillating resufacing rate
         if oscillate == "Y":
             if t_s_Myr >= 4400.:
                 resurf_cm_yr = 5.
@@ -566,7 +627,8 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                 resurf_cm_yr = 1.
             elif t_s_Myr < 100. or t_s_Myr >= 200. and t_s_Myr < 300. or t_s_Myr >= 400. and t_s_Myr < 500. or t_s_Myr >= 600. and t_s_Myr < 700. or t_s_Myr >= 800. and t_s_Myr < 900. or t_s_Myr >= 1000. and t_s_Myr < 1100. or t_s_Myr >= 1200. and t_s_Myr < 1300. or t_s_Myr >= 1400. and t_s_Myr < 1500. or t_s_Myr >= 1600. and t_s_Myr < 1700. or t_s_Myr >= 1800. and t_s_Myr < 1900. or t_s_Myr >= 2000. and t_s_Myr < 2100. or t_s_Myr >= 2200. and t_s_Myr < 2300. or t_s_Myr >= 2400. and t_s_Myr < 2500. or t_s_Myr >= 2600. and t_s_Myr < 2700. or t_s_Myr >= 2800. and t_s_Myr < 2900. or t_s_Myr >= 3000. and t_s_Myr < 3100. or t_s_Myr >= 3200. and t_s_Myr < 3300. or t_s_Myr >= 3400. and t_s_Myr < 3500. or t_s_Myr >= 3600. and t_s_Myr < 3700. or t_s_Myr >= 3800. and t_s_Myr < 3900. or t_s_Myr >= 4000. and t_s_Myr < 4100. or t_s_Myr >= 4200. and t_s_Myr < 4300.:
                 resurf_cm_yr = 9.
-    
+        print("     resurfacing rate (cm/yr):  = ",resurf_cm_yr)
+        # // 3. mantle and deep mantle melting (rates)
         # mantle melting
         sil_mag_m_yr = (resurf_cm_yr/(1.-f_pl2mo))*0.01 # silicate magmatism in m/yr
         sil_mag_m_s = sil_mag_m_yr/(365.*24.*60.*60.) # silicate magmatism in m/s
@@ -588,24 +650,43 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                 dm_r =  molSs_mm(sil_mag_kg_s,S_conc_DM,f_deep)
         else:
             dm_r = 0.
-    
+        # print("     mm_r: ",mm_r)
+        # print("     dm_r: ",dm_r)
+        # // 4. crustal and atmospheric rates
         # rates
+        # print("     A fr_r: ",fr_r)
+        # print("--------------------------------")
+        # print("     A f_remob: ",f_remob)
+        # print("     A F_ST: ",F_ST)
+        # print("     A timestep: ",time_step)
         mo_r = (1.-f_pl2mo)*mm_r
         fr_r = (f_remob*F_ST)/time_step
         hg_r = (mo_r+fr_r)*f_S2
         sq_r = (mo_r+fr_r)*f_sq
         ao_r = (mo_r+fr_r) - (sq_r+hg_r) # atmospheric outgassing rate
         sn_r = ao_r-(pu_r+pd_r)
-        
+        # print("     mo_r: ",mo_r)
+        # print("     B fr_r: ",fr_r)
+        # print("     B f_remob: ",f_remob)
+        # print("     B F_ST: ",F_ST)
+        # print("     B timestep: ",time_step)
+        # print("     hg_r: ",hg_r)
+        # print("     sq_r: ",sq_r)
+        # print("     ao_r: ",ao_r)
+        # print("     sn_r: ",sn_r)
+        # // 5. pl and rs fluxes
         pl_r = mm_r*f_pl2mo
         rs_r = (f_crust_return*SS_ST)/time_step
-
+        # print("     pl_r: ",pl_r)
+        # print("     rs_r: ",rs_r)
+        # // 6. flux for snow
         # flux for snow...
         if sn_r < 0.:
             bu_r = pd_r
         else:    
             bu_r = pd_r + sn_r
-
+        # print("     bu_r: ",bu_r)
+        # // 7. rates conversion to fluxes -- converted to flux (mol per timestep)
         # flux
         dm_F = dm_r*time_step
         mm_F = mm_r*time_step
@@ -622,10 +703,12 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         pu_F = pu_r*time_step
         rs_F = rs_r*time_step
     
+        # // 8. "fractions", giving ratios of volcanic S from outgassing and S from atmosphere vs total
         # fractions
         mo_mo_ca = mo_r/(mo_r+fr_r) # amount of volcanic S from mantle outgassing vs. total (inc. frost remobilisation)
         bu_bu_pl = bu_r/(bu_r+pl_r+hg_r+sq_r) # amout of S lost from atmosphere to surface vs total (inc. space loss)
     
+        # // 9. burial and escape (effects on 33,34,36 fractionation)
         # burial
         if sn_r > 0.:
             a33_bu = a_bu(sn_F, pd_F, a33_vp, a33_pd)
@@ -640,7 +723,8 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         a33_eb = a33_pr/a33_bu
         a34_eb = a34_pr/a34_bu
         a36_eb = a36_pr/a36_bu
-
+        
+        # // 10. mo, rf, dm isotope inputs. 
         # mo = mantle outgassing
         mo_33R, mo_34R, mo_36R, mo_32S, mo_33S, mo_34S, mo_36S = process_R_S(mo_F,M_33R,M_34R,M_36R,a33_mo,a34_mo,a36_mo)
         # rf = crustal remobilisation     
@@ -648,7 +732,8 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         # dm = deep mantle mixing
         dm_33R, dm_34R, dm_36R, dm_32S, dm_33S, dm_34S, dm_36S = process_R_S(dm_F,DM_33R,DM_34R,DM_36R,a33_dm,a34_dm,a36_dm)
         
-        # ti = total input
+        # // 11. total input calculation 
+        # # ti = total input
         ti_32S = mo_32S + fr_32S
         ti_33S = mo_33S + fr_33S
         ti_34S = mo_34S + fr_34S
@@ -658,24 +743,29 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         ti_33R = ti_33S/ti_32S
         ti_36R = ti_36S/ti_32S
 
-        # hg = homogeneous gas
+        # // 12. homogenous gas
+        # # hg = homogeneous gas
         hg_33R, hg_34R, hg_36R, hg_32S, hg_33S, hg_34S, hg_36S = process_R_S(hg_F,ti_33R,ti_34R,ti_36R,a33_hg,a34_hg,a36_hg)
-        # sq = sulfate sequestration
+        # // 13. sulfate sequestration
+        # # sq = sulfate sequestration
         sq_33R, sq_34R, sq_36R, sq_32S, sq_33S, sq_34S, sq_36S = process_R_S(sq_F,ti_33R,ti_34R,ti_36R,a33_sq,a34_sq,a36_sq)
-        # sn = if snow is negative, adding frost to atmosphere...
+        # // 14. snow if negative
+        # # sn = if snow is negative, adding frost to atmosphere...
         if sn_r < 0.:
             sn_33R, sn_34R, sn_36R, sn_32S, sn_33S, sn_34S, sn_36S = process_R_S((-1.*sn_F),F_33R,F_34R,F_36R,a33_vp,a34_vp,a36_vp)
         else:
             sn_32S, sn_33S, sn_34S, sn_36S = 0., 0., 0., 0.
 
-        # ao = atmospheric outgassing
+        # // 15. atmospheric outgassing
+        # # ao = atmospheric outgassing
         ao_32S = ti_32S - (hg_32S + sq_32S) + sn_32S
         ao_33S = ti_33S - (hg_33S + sq_33S) + sn_33S
         ao_34S = ti_34S - (hg_34S + sq_34S) + sn_34S
         ao_36S = ti_36S - (hg_36S + sq_36S) + sn_36S
         ao_33R, ao_36R, ao_34R, ao_33d, ao_34d, ao_36d, ao_33D, ao_36D, ao_TS, logao_ST = reservoir_isotope(ao_32S, ao_33S, ao_34S, ao_36S)
     
-        # assuming space loss material and burial material have correct alpha between them
+        # // 16. reservoirs fractionate
+        # # assuming space loss material and burial material have correct alpha between them
         constants = ao_TS, pu_F, bu_F, ao_32S, ao_33S, ao_34S, ao_36S, a33_eb, a34_eb, a36_eb
         if n == 1:
             reservoirs = fractionate(constants,nr_step,nr_tol,ao_32S)
@@ -694,14 +784,17 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         #undo_ST,undo_34R, undo_33R, undo_36R, logundo_ST, undo_33d, undo_34d, undo_36d, undo_33D, undo_36D = reservoir_isotope(undo_32S, undo_33S, undo_34S, undo_36S)
         #print(ao_33D, ao_36D,E_33D, E_36D, C_33D, C_36D,undo_33D, undo_36D)
 
-        # instantaneous space
+        # // 17. instatntaneous isotope ratios of space reservoir
+        # # instantaneous space
         iS_33R, iS_34R, iS_36R, iS_33d, iS_34d, iS_36d, iS_33D, iS_36D, iS_TS, logiS_ST = reservoir_isotope(S32E, S33E, S34E, S36E)
-    
+       
+        # // 18. plutonic and silicate/sulfate return
         # pl = pluton
         pl_33R, pl_34R, pl_36R, pl_32S, pl_33S, pl_34S, pl_36S = process_R_S(pl_F,M_33R,M_34R,M_36R,a33_pl,a34_pl,a36_pl)
         # rs = return silicate/sulfate
         rs_33R, rs_34R, rs_36R, rs_32S, rs_33S, rs_34S, rs_36S = process_R_S(rs_F,SS_33R,SS_34R,SS_36R,a33_rm,a34_rm,a36_rm)
 
+        # // 19. update reservoirs (M_XYS, DM_XYS, F_XYS, SS_XYS, S_XYS)
         # mantle
         M_32S = mantle(M_32S, mo_32S, pl_32S, rs_32S, dm_32S)
         M_33S = mantle(M_33S, mo_33S, pl_33S, rs_33S, dm_33S)
@@ -715,6 +808,16 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         DM_34S = deep_mantle(DM_34S, dm_34S)
         DM_36S = deep_mantle(DM_36S, dm_36S)
         DM_33R, DM_34R, DM_36R, DM_33d, DM_34d, DM_36d, DM_33D, DM_36D, DM_ST, logDM_ST = reservoir_isotope(DM_32S, DM_33S, DM_34S, DM_36S)
+        
+        # print("Site A variables: ")
+        # print("----> fr_32S: {:.16e}", fr_32S)
+        # print("----> fr_33S: {:.16e}", fr_33S)
+        # print("----> fr_34S: {:.16e}", fr_34S)
+        # print("----> fr_36S: {:.16e}", fr_36S)
+        # print("---------> sn_32S: {:.16e}", sn_32S)
+        # print("---------> sn_33S: {:.16e}", sn_33S)
+        # print("---------> sn_34S: {:.16e}", sn_34S)
+        # print("---------> sn_36S: {:.16e}", sn_36S)
 
         # frost
         if sn_F < 0.:
@@ -723,11 +826,37 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
             fr_34S = fr_34S + sn_34S
             fr_36S = fr_36S + sn_36S
             
+        # print("Frost variables BEFORE: ")
+        # print("====> F_32S: {:.16e}", F_32S)
+        # print("====> fr_32S: {:.16e}", fr_32S)
+        # print("====> S32C: {:.16e}", S32C)
+        # print("====> hg_32S: {:.16e}", hg_32S)
+        # print("====> F_33S: {:.16e}", F_33S)
+        # print("====> F_34S: {:.16e}", F_34S)
+        # print("====> F_36S: {:.16e}", F_36S)
+
         F_32S = frost(F_32S,fr_32S,S32C,hg_32S)
         F_33S = frost(F_33S,fr_33S,S33C,hg_33S)
         F_34S = frost(F_34S,fr_34S,S34C,hg_34S)
         F_36S = frost(F_36S,fr_36S,S36C,hg_36S)
+        
+        # print("Frost variables AFTER: ")
+        # print("====> F_32S: {:.16e}", F_32S)
+        # print("====> F_33S: {:.16e}", F_33S)
+        # print("====> F_34S: {:.16e}", F_34S)
+        # print("====> F_36S: {:.16e}", F_36S)
+
+        print(f"BEFORE F_ST: {F_ST:.16e}")
+        # print("The reservoir_isotope inputs are: ")
+        # print("-----> F_32S: {:.16e}", F_32S)
+        # print("-----> F_33S: {:.16e}", F_33S)
+        # print("-----> F_34S: {F_34S:.16e}", F_34S)
+        print(f"-----> F_36S: {F_36S:.16e}")
+        # print("-----> VCDT: {:.16e}", VCDT)
+        # print("-----> MIF_eq: {:.16e}", MIF_eq)
         F_33R, F_34R, F_36R, F_33d, F_34d, F_36d, F_33D, F_36D, F_ST, logF_ST = reservoir_isotope(F_32S, F_33S, F_34S, F_36S)
+
+        print(f"AFTER F_ST: {F_ST:.16e}")
 
         # SS = silicate + sulfate
         SS_32S = silsulf(SS_32S,rs_32S,sq_32S,pl_32S)
@@ -743,7 +872,8 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         S_36S = space(S_36S,S36E)
         S_33R, S_34R, S_36R, S_33d, S_34d, S_36d, S_33D, S_36D, S_ST, logS_ST = reservoir_isotope(S_32S, S_33S, S_34S, S_36S)
     
-        # check mass balance
+        # // 20. mass balance checks
+        # # check mass balance
         Io_ST = reservoir_totals(M_ST,DM_ST,F_ST,SS_ST,S_ST)        
         Io_32S = reservoir_totals(M_32S,DM_32S,F_32S,SS_32S,S_32S)
         Io_33S = reservoir_totals(M_33S,DM_33S,F_33S,SS_33S,S_33S)
@@ -755,6 +885,7 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         mb34S = mass_balance(Io_34S_initial,Io_34S)
         mb36S = mass_balance(Io_36S_initial,Io_36S)
     
+        # // 21. store results (and print every 1000 steps  or at end)
         results2 = pd.DataFrame([[n,t_s_Myr,S_conc_M,
                          M_34d,F_34d,SS_34d,S_34d,DM_34d,ao_34d,iS_34d,
                          M_33d,F_33d,SS_33d,S_33d,DM_33d,ao_33d,iS_33d,

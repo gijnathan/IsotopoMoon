@@ -41,11 +41,14 @@ const double F_mass_i_min = 0.;  // frost S mol (crust)
 const double F_mass_i_max = 1.92367E+20; 
 const double SS_mass_i_min = 0.;  // silicates/sulfates S mol (crust)
 const double SS_mass_i_max = 7.9E+19; 
+const double seconds_per_year = 365.0 * 24.0 * 60.0 * 60.0; // seconds in a year
 
 // canonical mass-dependent fractionation powers
 const double e33 = 0.515;
 const double e36 = 1.9;
 
+
+// ===========================================================================
 // Function declarations and definitions
 
 // mass-dependent fractionation factors
@@ -404,6 +407,7 @@ inline double deep_mantle(double DM, double dm) {
 }
 // crustal frost
 inline double frost(double F, double fr, double bu, double hg) {
+    // cout << "Inside frost(): F = " << F << ", fr = " << fr << ", bu = " << bu << ", hg = " << hg << endl;
     return F - fr + bu + hg; // frost remobilisation, burial
 }
 
@@ -687,12 +691,18 @@ void iso_evo(
     // # options for calculating fractionation factors
     // nofrac = "no" # if "yes", all fractionation factors = 1 (i.e., no fractionation); if "no", fractionation factors are pre-determined values
     // MAF = "no" # if "yes", mass-anomalous (i.e., with powers not equal to canonical values) is possible; if "no", fractionation factors follow canonical power laws
-    const string& nofrac, const string& MAF 
+    const string& nofrac, const string& MAF, 
+    const string& MIF_eq
     
 )
 {
+    // === set up vector for results ===
+    vector<SulfurState> results;  
+
     // === TIMESTAMP ===
     auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+    cout << endl << "======================================================" << endl;
+    cout <<         "=== Starting sulfur isotope evolution calculation ====" << endl;
     cout << "start " << ctime(&now);  // includes newline
 
     // === TIME SETUP ===
@@ -765,12 +775,12 @@ void iso_evo(
 
     // Resolve M_ST if still flagged as "N"
     if (M_ST.flag == "N") {
-        M_ST.value = M_mass_i_min + M_mass_f * (M_mass_i_max - M_mass_i_min);
+        M_ST.value = M_mass_i_min + M_mass_f.value * (M_mass_i_max - M_mass_i_min);
         M_ST.flag = "Y";  // Optional: mark as resolved
     }
 
     // Compute silicate mantle mass (subtracting crust mass)
-    double M_mass = (M_mass_i_min_sil + M_mass_f_sil * (M_mass_i_max_sil - M_mass_i_min_sil)) - mass_sil_C;
+    double M_mass = (M_mass_i_min_sil + M_mass_f_sil.value * (M_mass_i_max_sil - M_mass_i_min_sil)) - mass_sil_C;
 
     // Sulfur concentration in mantle (mol/kg)
     double S_conc_M = S_conc(M_ST.value, M_mass);
@@ -784,7 +794,7 @@ void iso_evo(
     tie(logM_ST, M_33R, M_34R, M_36R,
         M_32T_i, M_33T_i, M_34T_i, M_36T_i,
         M_33D, M_36D,
-        M_32S, M_33S, M_34S, M_36S) = initial_reservoir(M_ST.value, M_33d, M_34d, M_36d);
+        M_32S, M_33S, M_34S, M_36S) = initial_reservoir(M_ST.value, M_33d, M_34d, M_36d, VCDT, MIF_eq);
 
 
     // -------------------------
@@ -818,7 +828,7 @@ void iso_evo(
     tie(logDM_ST, DM_33R, DM_34R, DM_36R,
         DM_32T_i, DM_33T_i, DM_34T_i, DM_36T_i,
         DM_33D, DM_36D,
-        DM_32S, DM_33S, DM_34S, DM_36S) = initial_reservoir(DM_ST.value, DM_33d, DM_34d, DM_36d);
+        DM_32S, DM_33S, DM_34S, DM_36S) = initial_reservoir(DM_ST.value, DM_33d, DM_34d, DM_36d, VCDT, MIF_eq);
     
     // -------------------------
     // CRUSTAL FROSTS INITIAL RESERVOIR
@@ -827,7 +837,10 @@ void iso_evo(
         F_ST.value = F_mass_i_min + F_mass_f.value * (F_mass_i_max - F_mass_i_min);
         F_ST.flag = "Y";
     }
-
+    // cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\n";
+    // cout << "HERE F_ST = " << F_ST.value << "\n";
+    // cout << "F_mass_i_min = " << F_mass_i_min << "\n";
+    // cout << "F_mass_i_max = " << F_mass_i_max << "\n";
     double logF_ST, F_33R, F_34R, F_36R;
     double F_32T_i, F_33T_i, F_34T_i, F_36T_i;
     double F_33D, F_36D;
@@ -836,8 +849,24 @@ void iso_evo(
     tie(logF_ST, F_33R, F_34R, F_36R,
         F_32T_i, F_33T_i, F_34T_i, F_36T_i,
         F_33D, F_36D,
-        F_32S, F_33S, F_34S, F_36S) = initial_reservoir(F_ST.value, F_33d, F_34d, F_36d);
+        F_32S, F_33S, F_34S, F_36S) = initial_reservoir(F_ST.value, F_33d, F_34d, F_36d, VCDT, MIF_eq);
+    
+    // cout << "logF_ST: " << logF_ST << endl;
+    // cout << "F_33R: " << F_33R << endl;
+    // cout << "F_34R: " << F_34R << endl;
+    // cout << "F_36R: " << F_36R << endl;
+    // cout << "F_32T_i: " << F_32T_i << endl;
+    // cout << "F_33T_i: " << F_33T_i << endl;
+    // cout << "F_34T_i: " << F_34T_i << endl;
+    // cout << "F_36T_i: " << F_36T_i << endl;
+    // cout << "F_33D: " << F_33D << endl;
+    // cout << "F_36D: " << F_36D << endl;
+    // cout << "F_32S: " << F_32S << endl;
+    // cout << "F_33S: " << F_33S << endl;
+    // cout << "F_34S: " << F_34S << endl;
+    // cout << "F_36S: " << F_36S << endl;
 
+    // cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\n";
 
     // -------------------------
     // CRUSTAL SULFATES INITIAL RESERVOIR
@@ -855,7 +884,7 @@ void iso_evo(
     tie(logSS_ST, SS_33R, SS_34R, SS_36R,
         SS_32T_i, SS_33T_i, SS_34T_i, SS_36T_i,
         SS_33D, SS_36D,
-        SS_32S, SS_33S, SS_34S, SS_36S) = initial_reservoir(SS_ST.value, SS_33d, SS_34d, SS_36d);
+        SS_32S, SS_33S, SS_34S, SS_36S) = initial_reservoir(SS_ST.value, SS_33d, SS_34d, SS_36d, VCDT, MIF_eq);
 
 
     // -------------------------
@@ -874,7 +903,7 @@ void iso_evo(
     tie(logS_ST, S_33R, S_34R, S_36R,
         S_32T_i, S_33T_i, S_34T_i, S_36T_i,
         S_33D, S_36D,
-        S_32S, S_33S, S_34S, S_36S) = initial_reservoir(S_ST.value, S_33d, S_34d, S_36d);
+        S_32S, S_33S, S_34S, S_36S) = initial_reservoir(S_ST.value, S_33d, S_34d, S_36d, VCDT, MIF_eq);
 
     // -------------------------
     // MASS BALANCE CALCULATIONS - INITIAL STATE
@@ -891,6 +920,8 @@ void iso_evo(
     double mb33S  = mass_balance(Io_33S_initial, Io_33S_initial);
     double mb34S  = mass_balance(Io_34S_initial, Io_34S_initial);
     double mb36S  = mass_balance(Io_36S_initial, Io_36S_initial);
+
+    cout << "Initial F_34d = " << F_34d << "\n";
 
     // -------------------------
     // INITIAL TIME STEP
@@ -944,45 +975,7 @@ void iso_evo(
     // results = pd.concat([results, results2], ignore_index=True)
     // results.to_csv('time_evolution.csv', index=False, header=False)
     
-    // IN C++ WE WILL MAKE A STRUCT TO HOLD ALL THE VARIABLES AND THEN OUTPUT TO A CSV AT THE END
-
-    struct SulfurState {
-        // Time tracking
-        double t_step = 0.0;       // Integer step
-        double t_step_Myr = 0.0;   // Time in Myr
-
-        // Mantle sulfur concentration (mol/kg)
-        double S_conc_M = 0.0;
-
-        // δ values (‰) - delta values by reservoir
-        double M_34d = 0.0, F_34d = 0.0, SS_34d = 0.0, S_34d = 0.0, DM_34d = 0.0;
-        double M_33d = 0.0, F_33d = 0.0, SS_33d = 0.0, S_33d = 0.0, DM_33d = 0.0;
-        double M_36d = 0.0, F_36d = 0.0, SS_36d = 0.0, S_36d = 0.0, DM_36d = 0.0;
-
-        // Δ values (‰) - capital D
-        double M_33D = 0.0, F_33D = 0.0, SS_33D = 0.0, S_33D = 0.0, DM_33D = 0.0;
-        double M_36D = 0.0, F_36D = 0.0, SS_36D = 0.0, S_36D = 0.0, DM_36D = 0.0;
-
-        // ST (total sulfur) per reservoir
-        double M_ST = 0.0, F_ST = 0.0, SS_ST = 0.0, S_ST = 0.0, DM_ST = 0.0;
-
-        // log(ST) per reservoir
-        double logM_ST = 0.0, logF_ST = 0.0, logSS_ST = 0.0, logS_ST = 0.0, logDM_ST = 0.0;
-
-        // Mass balance terms
-        double mbST = 0.0, mb32S = 0.0, mb33S = 0.0, mb34S = 0.0, mb36S = 0.0;
-
-        // Reference isotope ratios
-        double M_33R = 0.0, F_33R = 0.0, SS_33R = 0.0, S_33R = 0.0, DM_33R = 0.0;
-        double M_34R = 0.0, F_34R = 0.0, SS_34R = 0.0, S_34R = 0.0, DM_34R = 0.0;
-        double M_36R = 0.0, F_36R = 0.0, SS_36R = 0.0, S_36R = 0.0, DM_36R = 0.0;
-
-        // Optional exists to include the following to mirror the extra Python columns:
-        // - Escape-burial fractionation factors (a33, a34, a36)
-        // - Fluxes (e.g., F_mo, F_pd, etc.)
-        // - Derived ratios like mo/(mo+ca), bu/(bu+pl)
-        // These can be added later 
-    };
+    
 
     // NOW THE BIG LOOP:
     // Purpose of loop: evolve sulfur reservoirs over time
@@ -1011,7 +1004,527 @@ void iso_evo(
     // 21. store results in struct and push to vector
     
 
+    // ============================================================================
+    // ============================================================================
+    // Sulfur model main time loop (C++ version)
+    // Here we go...
+    // ============================================================================
+    // ============================================================================
+    cout << "HERE we start time looping" << endl;
+    for (int n = 1; n < end; ++n) {
+        // --------------------
+        // 1. TIMESTEPS
+        // --------------------
+        double t_s = n * time_step;
+        double t_s_Myr = n * t_step_Myr;
+        
+        // --------------------
+        // debugging
+        if (n < 5) {
+            ostringstream oss_time, oss_F34d;
+            oss_time << fixed << setprecision(17) << t_s_Myr;
+            oss_F34d << fixed << setprecision(17) << F_34d;
+            
+            cout << endl;
+            cout << "Time: " << oss_time.str() << " Myr"
+                << " | F_34d: " << oss_F34d.str()
+                << " | Time: " << current_datetime_string() << endl;
+            // DEBUG_PRINT("time step (Myr): ", t_s_Myr);
+            // DEBUG_PRINT("F_34d: ", F_34d);
+            // DEBUG_PRINT("M_ST: ", M_ST.value);
+            // DEBUG_PRINT("DM_ST: ", DM_ST.value);
+            // DEBUG_PRINT("F_ST: ", F_ST.value);
+            // DEBUG_PRINT("SS_ST: ", SS_ST.value);
+            // DEBUG_PRINT("S_ST: ", S_ST.value);
+        }
+       
+        
+        // --------------------
 
+        // periodic output:
+        if (n % 1000 == 0) {
+            cout << "Time: " << t_s_Myr << " Myr"
+                 << " | F_34d: " << F_34d
+                 << " | Time: " << current_datetime_string() << endl; 
+        }
+        // --------------------
+        // 2. OSCILLATING RESURFACING RATE
+        // --------------------
+        if (oscillate == "Y") {
+            if (t_s_Myr >= 4400.0) {
+                resurf_cm_yr = 5.0;
+                }
+            else if (
+                (t_s_Myr >= 100.0 && t_s_Myr < 200.0) || (t_s_Myr >= 300.0 && t_s_Myr < 400.0) ||
+                (t_s_Myr >= 500.0 && t_s_Myr < 600.0) || (t_s_Myr >= 700.0 && t_s_Myr < 800.0) ||
+                (t_s_Myr >= 900.0 && t_s_Myr < 1000.0) || (t_s_Myr >= 1100.0 && t_s_Myr < 1200.0) ||
+                (t_s_Myr >= 1300.0 && t_s_Myr < 1400.0) || (t_s_Myr >= 1500.0 && t_s_Myr < 1600.0) ||
+                (t_s_Myr >= 1700.0 && t_s_Myr < 1800.0) || (t_s_Myr >= 1900.0 && t_s_Myr < 2000.0) ||
+                (t_s_Myr >= 2100.0 && t_s_Myr < 2200.0) || (t_s_Myr >= 2300.0 && t_s_Myr < 2400.0) ||
+                (t_s_Myr >= 2500.0 && t_s_Myr < 2600.0) || (t_s_Myr >= 2700.0 && t_s_Myr < 2800.0) ||
+                (t_s_Myr >= 2900.0 && t_s_Myr < 3000.0) || (t_s_Myr >= 3100.0 && t_s_Myr < 3200.0) ||
+                (t_s_Myr >= 3300.0 && t_s_Myr < 3400.0) || (t_s_Myr >= 3500.0 && t_s_Myr < 3600.0) ||
+                (t_s_Myr >= 3700.0 && t_s_Myr < 3800.0) || (t_s_Myr >= 3900.0 && t_s_Myr < 4000.0) ||
+                (t_s_Myr >= 4100.0 && t_s_Myr < 4200.0) || (t_s_Myr >= 4300.0 && t_s_Myr < 4400.0)
+                ) {
+                    resurf_cm_yr = 1.0;
+                }
+            else {
+                resurf_cm_yr = 9.0;
+                }
+            }
+        DEBUG_PRINT("resurf_cm_yr: ", resurf_cm_yr);
+        // --------------------
+        // 3. MANTLE AND DEEP MANTLE MELTING (RATES)
+        // --------------------
+        // Silicate magmatism in m/yr (adjusting for plutonic retention)
+        double sil_mag_m_yr = (resurf_cm_yr / (1.0 - f_pl2mo)) * 0.01;  // silicate magmatism in cm/yr → m/yr
+        double sil_mag_m_s = sil_mag_m_yr / seconds_per_year;          // silicate magmatism in m/s
+        double sil_mag_kg_s = sil_mag_m_s * Io_SA * sil_mag_rho;       // silicate magmatism mass in kg/s volume flux * density
+
+        // Fraction of crust returned in one time step
+        double f_crust_return = (sil_mag_m_s * time_step) / thick_C; // volume fraction crust returned in a time step
+        double f_remob = f_remobilised * f_crust_return; // fraction of crustal frosts that are remobilised
+        
+        // mantle melting rate
+        double S_conc_M = S_conc(M_ST.value, M_mass);  // in wt%
+        double mm_r;
+        
+        if (S_conc_M > sil_mag_S) {
+            mm_r = molSs_mm(sil_mag_kg_s, sil_mag_S, 1.0);
+        } else {
+            mm_r = molSs_mm(sil_mag_kg_s, S_conc_M, 1.0);
+        }
+
+        // deep mantle melting rate
+        double dm_r = 0.0;
+
+        if (DM_ST.flag == "Y" && DM_ST.value > 0.0) {
+            double S_conc_DM = S_conc(DM_ST.value, DM_mass);
+            if (S_conc_DM > sil_mag_S) {
+                dm_r = molSs_mm(sil_mag_kg_s, sil_mag_S, f_deep);
+            } else {
+                dm_r = molSs_mm(sil_mag_kg_s, S_conc_DM, f_deep);
+            }
+        } else {
+            dm_r = 0.0; // Deep mantle inactive or no sulfur present
+        }
+        // DEBUG_PRINT("mm_r: ", mm_r);
+        // DEBUG_PRINT("dm_r: ", dm_r);
+
+        // 4. CRUSTAL AND ATMOSPHERIC RATES
+        // -------------------------------
+        // DEBUG_PRINT("A fr_r: ", fr_r);
+        // cout << "--------------------------------" << "\n";
+        // DEBUG_PRINT("A f_remob: ", f_remob);
+        // DEBUG_PRINT("A F_ST: ", F_ST.value);
+        // DEBUG_PRINT("A timestep: ", time_step);
+
+        double mo_r = (1.0 - f_pl2mo) * mm_r;  // mantle outgassing rate
+        double fr_r = (f_remob * F_ST.value) / time_step;  // remobilized frost release
+        double hg_r = (mo_r + fr_r) * f_S2;  // photochemical loss to space (Hg)
+        double sq_r = (mo_r + fr_r) * f_sq;  // surface sequestration (Sq)
+        double ao_r = (mo_r + fr_r) - (sq_r + hg_r);  // atmospheric outgassing
+        double sn_r = ao_r - (pu_r + pd_r);  // net sulfur to atmosphere
+
+        // DEBUG_PRINT("mo_r: ", mo_r);
+        // DEBUG_PRINT("B fr_r: ", fr_r);
+        // DEBUG_PRINT("B f_remob: ", f_remob);
+        // DEBUG_PRINT("B F_ST: ", F_ST.value);
+        // DEBUG_PRINT("B timestep: ", time_step);
+        // DEBUG_PRINT("hg_r: ", hg_r);
+        // DEBUG_PRINT("sq_r: ", sq_r);
+        // DEBUG_PRINT("ao_r: ", ao_r);
+        // DEBUG_PRINT("sn_r: ", sn_r);
+
+        // 5. PLUTONIC AND REGASSING FLUXES
+        // -------------------------------
+        double pl_r = mm_r * f_pl2mo;  // plutonic retention rate
+        double rs_r = (f_crust_return * SS_ST.value) / time_step;  // subduction (regassing) rate
+        // DEBUG_PRINT("pl_r: ", pl_r);
+        // DEBUG_PRINT("rs_r: ", rs_r);
+        // 6. FLUX FOR SNOW
+        // ----------------
+        double bu_r;
+
+        if (sn_r < 0.0) {
+            bu_r = pd_r;
+        } else {
+            bu_r = pd_r + sn_r;
+        }
+        // DEBUG_PRINT("bu_r: ", bu_r);
+        // 7. RATES → FLUXES (mol per timestep) .... rates converted to flux (mol per timestep)
+        // -------------------------------------
+        double dm_F = dm_r * time_step;
+        double mm_F = mm_r * time_step;
+        double mo_F = mo_r * time_step;
+        double fr_F = fr_r * time_step;
+        double pd_F = pd_r * time_step;
+        double hg_F = hg_r * time_step;
+        double sq_F = sq_r * time_step;
+        double ao_F = ao_r * time_step;
+        double sn_F = sn_r * time_step;
+        double bu_F = bu_r * time_step;
+        double pl_F = pl_r * time_step;
+        double pr_F = pr_r * time_step;
+        double pu_F = pu_r * time_step;
+        double rs_F = rs_r * time_step;
+
+        // 8. FRACTIONS (Volcanic vs Frost Remobilization, Burial vs Escape)
+        // ------------------------------------------------------------------
+        // Avoid divide-by-zero with conditional expressions
+        double mo_mo_ca = (mo_r + fr_r > 0.0) ? (mo_r / (mo_r + fr_r)) : 0.0; // amount of volcanic S from mantle outgassing vs. total (inc. frost remobilisation)
+        double bu_bu_pl = (bu_r + pl_r + hg_r + sq_r > 0.0) ? (bu_r / (bu_r + pl_r + hg_r + sq_r)) : 0.0; // amount of S lost from atmosphere to surface vs total (inc. space loss)
+
+        // 9. BURIAL AND ESCAPE FRACTIONATION FACTORS - effects on 33,34,36 fractionation
+        // -------------------------------------------
+        // Burial fractionation (depends on presence of snow flux)
+        double a33_bu = a_bu((sn_r > 0.0 ? sn_F : 0.0), pd_F, alpha.a33["vp"], alpha.a33["pd"]);
+        double a34_bu = a_bu((sn_r > 0.0 ? sn_F : 0.0), pd_F, alpha.a34["vp"], alpha.a34["pd"]);
+        double a36_bu = a_bu((sn_r > 0.0 ? sn_F : 0.0), pd_F, alpha.a36["vp"], alpha.a36["pd"]);
+
+        // Escape-burial fractionation
+        double a33_eb = (a33_bu != 0.0) ? (a33_pr / a33_bu) : 0.0;
+        double a34_eb = (a34_bu != 0.0) ? (a34_pr / a34_bu) : 0.0;
+        double a36_eb = (a36_bu != 0.0) ? (a36_pr / a36_bu) : 0.0;
+
+        // 10. mo, rf, dm isotope inputs
+        // ------------------------------
+        // Mantle outgassing
+        auto [mo_33R, mo_34R, mo_36R, mo_32S, mo_33S, mo_34S, mo_36S] =
+            process_R_S(mo_F, M_33R, M_34R, M_36R, alpha.a33["mo"], alpha.a34["mo"], alpha.a36["mo"]);
+
+        // Crustal remobilisation
+        auto [fr_33R, fr_34R, fr_36R, fr_32S, fr_33S, fr_34S, fr_36S] =
+            process_R_S(fr_F, F_33R, F_34R, F_36R, alpha.a33["fr"], alpha.a34["fr"], alpha.a36["fr"]);
+
+        // Deep mantle mixing
+        auto [dm_33R, dm_34R, dm_36R, dm_32S, dm_33S, dm_34S, dm_36S] =
+            process_R_S(dm_F, DM_33R, DM_34R, DM_36R, alpha.a33["dm"], alpha.a34["dm"], alpha.a36["dm"]);
+
+
+        // 11. TOTAL INPUT CALCULATION
+        // ------------------------------
+        // ti = total input
+        double ti_32S = mo_32S + fr_32S;
+        double ti_33S = mo_33S + fr_33S;
+        double ti_34S = mo_34S + fr_34S;
+        double ti_36S = mo_36S + fr_36S;
+
+        double ti_TS  = ti_32S + ti_33S + ti_34S + ti_36S;
+
+        double ti_34R = (ti_32S != 0.0) ? (ti_34S / ti_32S) : 0.0;
+        double ti_33R = (ti_32S != 0.0) ? (ti_33S / ti_32S) : 0.0;
+        double ti_36R = (ti_32S != 0.0) ? (ti_36S / ti_32S) : 0.0;
+
+        // 12. Homogeneous gas
+        // --------------------
+        auto [hg_33R, hg_34R, hg_36R, hg_32S, hg_33S, hg_34S, hg_36S] =
+            process_R_S(hg_F, ti_33R, ti_34R, ti_36R, alpha.a33["hg"], alpha.a34["hg"], alpha.a36["hg"]);
+
+        // 13. Sulfate sequestration
+        // --------------------------
+        auto [sq_33R, sq_34R, sq_36R, sq_32S, sq_33S, sq_34S, sq_36S] =
+            process_R_S(sq_F, ti_33R, ti_34R, ti_36R, alpha.a33["sq"], alpha.a34["sq"], alpha.a36["sq"]);
+
+
+        // 14. Snow (negative only — adds frost to atmosphere if sn_r < 0)
+        // ---------------------------------------------------------------
+        double sn_32S, sn_33S, sn_34S, sn_36S;
+
+        if (sn_r < 0.0) {
+            auto [sn_33R, sn_34R, sn_36R, temp_sn_32S, temp_sn_33S, temp_sn_34S, temp_sn_36S] =
+                process_R_S(-1.0 * sn_F, F_33R, F_34R, F_36R,
+                            alpha.a33["vp"], alpha.a34["vp"], alpha.a36["vp"]);
+            sn_32S = temp_sn_32S;
+            sn_33S = temp_sn_33S;
+            sn_34S = temp_sn_34S;
+            sn_36S = temp_sn_36S;
+        } else {
+            sn_32S = 0.0;
+            sn_33S = 0.0;
+            sn_34S = 0.0;
+            sn_36S = 0.0;
+        }
+
+        // 15. ATMOSPHERIC OUTGASSING ao = atmospheric outgassing
+        // --------------------------
+        double ao_32S = ti_32S - (hg_32S + sq_32S) + sn_32S;
+        double ao_33S = ti_33S - (hg_33S + sq_33S) + sn_33S;
+        double ao_34S = ti_34S - (hg_34S + sq_34S) + sn_34S;
+        double ao_36S = ti_36S - (hg_36S + sq_36S) + sn_36S;
+
+        auto [ao_33R, ao_36R, ao_34R, ao_33d, ao_34d, ao_36d, ao_33D, ao_36D, ao_TS, logao_ST] =
+            reservoir_isotope(ao_32S, ao_33S, ao_34S, ao_36S, VCDT, MIF_eq);
+
+        // 16. RESERVOIRS FRACTIONATE
+        // --------------------------
+        // assuming space loss material and burial material have correct alpha between them
+        double S32C, S33C, S34C, S36C;
+        double S32E, S33E, S34E, S36E;
+        // Set up constants for fractionation step
+        FractionateConsts constants = {
+            ao_TS, pu_F, bu_F,
+            ao_32S, ao_33S, ao_34S, ao_36S,
+            a33_eb, a34_eb, a36_eb
+        };
+
+        // Choose initial guess value for Newton-Raphson
+        double S32_input;
+        if (n == 1) {
+            S32_input = ao_32S;
+        } else {
+            S32_input = S32C;
+        }
+
+        // Perform fractionation
+        tie(S32C, S33C, S34C, S36C,
+            S32E, S33E, S34E, S36E) =
+            fractionate(constants, nr_step, nr_tol, S32_input);
+
+        // comments from python version: 
+        //  # fractionating space loss and photo-dissociation, and remainder going to frost... ONLY WORKS IF PD = 0
+        // # pu_33R, pu_34R, pu_36R, pu_32S, pu_33S, pu_34S, pu_36S = process_R_S(pu_F,ao_33R,ao_34R,ao_36R,a33_pr,a34_pr,a36_pr)
+        // # sn_32S, sn_33S, sn_34S, sn_36S = (ao_32S - pu_32S), (ao_33S - pu_33S), (ao_34S - pu_34S), (ao_36S - pu_36S) 
+        // # S32E, S33E, S34E, S36E = pu_32S, pu_33S, pu_34S, pu_36S
+        // # S32C, S33C, S34C, S36C = sn_32S, sn_33S, sn_34S, sn_36S
+        // # E_33R, E_34R, E_36R, E_33d, E_34d, E_36d, E_33D, E_36D, E_ST, logE_ST = reservoir_isotope(S32E, S33E, S34E, S36E)
+        // # C_33R, C_34R, C_36R, C_33d, C_34d, C_36d, C_33D, C_36D, C_ST, logC_ST  = reservoir_isotope(S32C, S33C, S34C, S36C)
+        // #undo_32S, undo_33S, undo_34S, undo_36S = (S32E + S32C), (S33E + S33C), (S34E + S34C), (S36E + S36C)
+        // #undo_ST,undo_34R, undo_33R, undo_36R, logundo_ST, undo_33d, undo_34d, undo_36d, undo_33D, undo_36D = reservoir_isotope(undo_32S, undo_33S, undo_34S, undo_36S)
+        // #print(ao_33D, ao_36D,E_33D, E_36D, C_33D, C_36D,undo_33D, undo_36D)
+
+        // ------------------------------
+        // 17. Instantaneous isotope ratios of space reservoir
+        // ------------------------------
+        double iS_33R, iS_34R, iS_36R;
+        double iS_33d, iS_34d, iS_36d;
+        double iS_33D, iS_36D;
+        double iS_TS, logiS_ST;
+        tie(iS_33R, iS_34R, iS_36R,
+            iS_33d, iS_34d, iS_36d,
+            iS_33D, iS_36D,
+            iS_TS, logiS_ST) =
+            reservoir_isotope(S32E, S33E, S34E, S36E, VCDT, MIF_eq);
+
+        // 18. plutonic and silicate/sulfate return
+        // -----------------------------------------
+        // pl = pluton
+        auto [pl_33R, pl_34R, pl_36R,
+            pl_32S, pl_33S, pl_34S, pl_36S] =
+            process_R_S(pl_F, M_33R, M_34R, M_36R,
+                        alpha.a33["pl"], alpha.a34["pl"], alpha.a36["pl"]);
+
+        // rs = return silicate/sulfate
+        auto [rs_33R, rs_34R, rs_36R,
+            rs_32S, rs_33S, rs_34S, rs_36S] =
+            process_R_S(rs_F, SS_33R, SS_34R, SS_36R,
+                        alpha.a33["rm"], alpha.a34["rm"], alpha.a36["rm"]);
+
+        // ------------------------------
+        // 19. UPDATE RESERVOIRS (M_XYS, DM_XYS, F_XYS, SS_XYS, S_XYS)
+        // ------------------------------
+        // Mantle
+        M_32S = mantle(M_32S, mo_32S, pl_32S, rs_32S, dm_32S);
+        M_33S = mantle(M_33S, mo_33S, pl_33S, rs_33S, dm_33S);
+        M_34S = mantle(M_34S, mo_34S, pl_34S, rs_34S, dm_34S);
+        M_36S = mantle(M_36S, mo_36S, pl_36S, rs_36S, dm_36S);
+
+        tie(M_33R, M_34R, M_36R,
+            M_33d, M_34d, M_36d,
+            M_33D, M_36D,
+            M_ST.value, logM_ST) =
+            reservoir_isotope(M_32S, M_33S, M_34S, M_36S,
+                            VCDT, MIF_eq);
+
+        // Deep Mantle
+        DM_32S = deep_mantle(DM_32S, dm_32S);
+        DM_33S = deep_mantle(DM_33S, dm_33S);
+        DM_34S = deep_mantle(DM_34S, dm_34S);
+        DM_36S = deep_mantle(DM_36S, dm_36S);
+
+        tie(DM_33R, DM_34R, DM_36R,
+            DM_33d, DM_34d, DM_36d,
+            DM_33D, DM_36D,
+            DM_ST.value, logDM_ST) =
+            reservoir_isotope(DM_32S, DM_33S, DM_34S, DM_36S,
+                            VCDT, MIF_eq);
+        
+        // cout << "Site A variables: " << endl;
+        // cout << "----> fr_32S: " << fr_32S << endl;
+        // cout << "----> fr_33S: " << fr_33S << endl;
+        // cout << "----> fr_34S: " << fr_34S << endl;
+        // cout << "----> fr_36S: " << fr_36S << endl;
+        
+        // cout << "---------> sn_32S: " << sn_32S << endl;
+        // cout << "---------> sn_33S: " << sn_33S << endl;
+        // cout << "---------> sn_34S: " << sn_34S << endl;
+        // cout << "---------> sn_36S: " << sn_36S << endl;
+
+        // Frost
+        if (sn_F < 0.0) {
+            fr_32S += sn_32S;
+            fr_33S += sn_33S;
+            fr_34S += sn_34S;
+            fr_36S += sn_36S;
+        }
+        // cout << "Frost variables BEFORE: " << endl;
+        // cout << "====>  F_32S: " <<  scientific << setprecision(16) << F_32S << endl;
+        // cout << "====>  fr_32S: " <<  scientific << setprecision(16) << fr_32S << endl;
+        // cout << "====>  S32C: " <<  scientific << setprecision(16) << S32C << endl;
+        // cout << "====>  hg_32S: " <<  scientific << setprecision(16) << hg_32S << endl;
+        // // cout << "====>  F_33S: " <<  F_33S << endl;
+        // // cout << "====>  F_34S: " <<  F_34S << endl;
+        // cout << "====>  F_36S: " <<  F_36S << endl;
+        
+        F_32S = frost(F_32S, fr_32S, S32C, hg_32S);
+        F_33S = frost(F_33S, fr_33S, S33C, hg_33S);
+        F_34S = frost(F_34S, fr_34S, S34C, hg_34S);
+        F_36S = frost(F_36S, fr_36S, S36C, hg_36S); // ERROR: HAD BEEN USING F_36S with a fr_34S as an input! that's wrong
+        
+        // cout << "Frost variables AFTER: " << endl;
+        // cout << "====>  F_32S: " <<  scientific << setprecision(16) << F_32S << endl;
+        // cout << "====>  F_33S: " <<  scientific << setprecision(16) << F_33S << endl;
+        // cout << "====>  F_34S: " <<  scientific << setprecision(16) << F_34S << endl;
+        // cout << "====>  F_36S: " <<  scientific << setprecision(16) << F_36S << endl;
+
+        cout << "BEFORE F_ST.value: " << F_ST.value << endl;
+        // cout << "The reservoir_isotope inputs are: " << endl;
+        // cout << "-----> F_32S: " << scientific << setprecision(16) << F_32S << endl;
+        // cout << "-----> F_33S: " << scientific << setprecision(16) << F_33S << endl;
+        // cout << "-----> F_34S: " << scientific << setprecision(16) << F_34S << endl;
+        cout << "-----> F_36S: " << scientific << setprecision(16) << F_36S << endl;
+        // cout << "-----> VCDT contents:" << endl;
+        // for (const auto& [key, val] : VCDT) {
+        //     cout << "        " << key << ": " << val << endl;
+        // }
+        // cout << "-----> MIF_eq: " << MIF_eq << endl;
+
+        tie(F_33R, F_34R, F_36R,
+            F_33d, F_34d, F_36d,
+            F_33D, F_36D,
+            F_ST.value, logF_ST) =
+            reservoir_isotope(F_32S, F_33S, F_34S, F_36S,
+                            VCDT, MIF_eq);
+        
+        cout << "AFTER F_ST.value: " << F_ST.value << endl;
+
+        // Silicate + Sulfate (SS)
+        SS_32S = silsulf(SS_32S, rs_32S, sq_32S, pl_32S);
+        SS_33S = silsulf(SS_33S, rs_33S, sq_33S, pl_33S);
+        SS_34S = silsulf(SS_34S, rs_34S, sq_34S, pl_34S);
+        SS_36S = silsulf(SS_36S, rs_36S, sq_36S, pl_36S);
+
+        tie(SS_33R, SS_34R, SS_36R,
+            SS_33d, SS_34d, SS_36d,
+            SS_33D, SS_36D,
+            SS_ST.value, logSS_ST) =
+            reservoir_isotope(SS_32S, SS_33S, SS_34S, SS_36S,
+                            VCDT, MIF_eq);
+
+        // Space (S)
+        S_32S = space(S_32S, S32E);
+        S_33S = space(S_33S, S33E);
+        S_34S = space(S_34S, S34E);
+        S_36S = space(S_36S, S36E);
+
+        tie(S_33R, S_34R, S_36R,
+            S_33d, S_34d, S_36d,
+            S_33D, S_36D,
+            S_ST.value, logS_ST) =
+            reservoir_isotope(S_32S, S_33S, S_34S, S_36S,
+                            VCDT, MIF_eq);
+
+        // ------------------------------
+        // 20. MASS BALANCE CHECKS
+        // ------------------------------
+
+        // Total system mass and isotopes across all reservoirs
+        double Io_ST  = reservoir_totals(M_ST.value,  DM_ST.value,  F_ST.value,  SS_ST.value,  S_ST.value);
+        double Io_32S = reservoir_totals(M_32S,       DM_32S,       F_32S,       SS_32S,       S_32S);
+        double Io_33S = reservoir_totals(M_33S,       DM_33S,       F_33S,       SS_33S,       S_33S);
+        double Io_34S = reservoir_totals(M_34S,       DM_34S,       F_34S,       SS_34S,       S_34S);
+        double Io_36S = reservoir_totals(M_36S,       DM_36S,       F_36S,       SS_36S,       S_36S);
+
+        // Mass balance comparisons against initial totals
+        mbST   = mass_balance(Io_ST_initial,  Io_ST);
+        mb32S  = mass_balance(Io_32S_initial, Io_32S);
+        mb33S  = mass_balance(Io_33S_initial, Io_33S);
+        mb34S  = mass_balance(Io_34S_initial, Io_34S);
+        mb36S  = mass_balance(Io_36S_initial, Io_36S);
+
+
+
+        // ------------------------------
+        // 21. STORE RESULTS IN STRUCT AND PUSH TO VECTOR 
+        // ------------------------------
+        // (print every 1000 steps or at end) this is a dataframe in the python version
+        // ==========================================
+        // === End of timestep: update full state ===
+        SulfurState state;
+        update_sulfur_state(state,
+            static_cast<double>(n),              // t_step
+            t_s_Myr,                             // t_step_Myr
+            S_conc_M,                            // S_conc_M
+
+            // δ values
+            M_34d, F_34d, SS_34d, S_34d, DM_34d,
+            M_33d, F_33d, SS_33d, S_33d, DM_33d,
+            M_36d, F_36d, SS_36d, S_36d, DM_36d,
+
+            // Δ values
+            M_33D, F_33D, SS_33D, S_33D, DM_33D,
+            M_36D, F_36D, SS_36D, S_36D, DM_36D,
+
+            // ST values
+            M_ST.value, F_ST.value, SS_ST.value, S_ST.value, DM_ST.value,
+
+            // log(ST)
+            logM_ST, logF_ST, logSS_ST, logS_ST, logDM_ST,
+
+            // mass balance
+            mbST, mb32S, mb33S, mb34S, mb36S,
+
+            // Reference isotope ratios
+            M_33R, F_33R, SS_33R, S_33R, DM_33R,
+            M_34R, F_34R, SS_34R, S_34R, DM_34R,
+            M_36R, F_36R, SS_36R, S_36R, DM_36R,
+
+            // Escape-burial δ and Δ
+            ao_34d, iS_34d,
+            ao_33d, iS_33d,
+            ao_36d, iS_36d,
+            ao_33D, iS_33D,
+            ao_36D, iS_36D,
+
+            // Fluxes
+            mo_F, fr_F, pr_F, pu_F, sn_F,
+            pd_F, hg_F, bu_F, pl_F, rs_F,
+            sq_F, ao_F, dm_F,
+
+            // Ratios
+            mo_mo_ca, bu_bu_pl,
+
+            // Ref ratios (initial-state and escape-burial)
+            ao_33R, iS_33R,
+            ao_34R, iS_34R,
+            ao_36R, iS_36R,
+
+            // Escape-burial α values
+            a33_bu, a34_bu, a36_bu,
+            a33_eb, a34_eb, a36_eb
+        );
+
+
+
+        // Push the updated state to store results
+        results.push_back(state);
+        if (n % 1000 == 0 || n == static_cast<int>(end_time_Myr / t_step_Myr) - 1) {
+            cout << "Step " << n << ", Time = " << t_s_Myr << " Myr, F_34d = " << F_34d << endl;
+        }
+
+    }
+}
 //     return; 
 // }
 
