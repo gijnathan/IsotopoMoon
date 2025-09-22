@@ -618,8 +618,8 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
             # print("     S_ST:  = ",S_ST)
 
         
-        if(n % 1000==0):
-            print(t_s_Myr,F_34d,datetime.datetime.now())
+        # if(n % 1000==0):
+        #     print(t_s_Myr,F_34d,datetime.datetime.now())
         
         # // 2. oscillating resufacing rate
         if oscillate == "Y":
@@ -907,9 +907,13 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                          a33_bu,a34_bu,a36_bu,a33_eb,a34_eb,a36_eb]]) 
         results = pd.concat([results, results2], ignore_index=True)
         # Save to CSV and print every 1000 steps or at the last step
-        if (n % 1000 == 0) or (n == end - 1):
+        if (n % 1000 == 0):
+            results.to_csv('time_evolution.csv', index=False, header=False)
+            print(f"Step: {n} | Time = {t_s_Myr:.1f} Myr | F_34d = {F_34d:.16f}")
+        elif (n == end - 1):
             results.to_csv('time_evolution.csv', index=False, header=False)
             print(f"Last step: {n} | Time = {t_s_Myr:.1f} Myr | F_34d = {F_34d:.16f}")
+
 
         #  if(n % 1000==0):
         #     results.to_csv('time_evolution.csv', index=False, header=False)
@@ -1012,8 +1016,8 @@ def iso_evo_simple(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_si
     for n in range(1,end,1): 
         t_s = n*time_step
         t_s_Myr = n*t_step_Myr
-        if(n % 1000==0):
-            print(t_s_Myr,F_34d,datetime.datetime.now())
+        # if(n % 1000==0):
+        #     print(t_s_Myr,F_34d,datetime.datetime.now())
         
         # flux
         pr_F = pr_r*time_step

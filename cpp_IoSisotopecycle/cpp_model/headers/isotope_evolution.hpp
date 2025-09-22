@@ -1024,12 +1024,12 @@ void iso_evo(
         
         // --------------------
 
-        // periodic output:
-        if (n % 1000 == 0) {
-            cout << "Time: " << t_s_Myr << " Myr"
-                 << " | F_34d: " << F_34d
-                 << " | Time: " << current_datetime_string() << endl; 
-        }
+        // // periodic output:
+        // if (n % 1000 == 0) {
+        //     cout << "Time: " << t_s_Myr << " Myr"
+        //          << " | F_34d: " << F_34d
+        //          << " | Time: " << current_datetime_string() << endl; 
+        // }
         // --------------------
         // 2. OSCILLATING RESURFACING RATE
         // --------------------
@@ -1505,12 +1505,12 @@ void iso_evo(
         // if (n % 1000 == 0 || n == static_cast<int>(end_time_Myr / t_step_Myr) - 1) {
         //     cout << "Last Step: " << n << ", Time = " << t_s_Myr << " Myr, F_34d = " << setprecision(16) << F_34d << endl;
         // }
-        if (n == total_steps) {
-            cout << "Last step: " << n
-                << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
-                << " | F_34d = " << setprecision(16) << F_34d << endl;
-        }
-        else if (n % 1000 == 0) {
+        // if (n == total_steps) {
+        //     cout << "Last step: " << n
+        //         << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
+        //         << " | F_34d = " << setprecision(16) << F_34d << endl;
+        // }
+        if (n % 1000 == 0) {
             cout << "Step: " << n
                 << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
                 << " | F_34d = " << setprecision(16) << F_34d << endl;

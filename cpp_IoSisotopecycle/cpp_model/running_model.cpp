@@ -552,7 +552,7 @@ auto print_inputs = [](double t_step_Myr, double end_time_Myr, double nr_step, d
 
 // Basic example inputs (replace with real values as needed)
 double t_step_Myr = 1e-1; // timestep in Myr
-double end_time_Myr = 20.0; //200.0; // 4570 // end time in Myr
+double end_time_Myr = 200.1; // 4570 // end time in Myr
 double nr_step = 1.;
 double nr_tol = 1e5; //THIS SEEMS LIKE A WRONG VALUE BUT IT IS WHAT IS IN THE PYTHON CODE SO I NEED IT LIKE THIS TO MATCH THE CODES
 
