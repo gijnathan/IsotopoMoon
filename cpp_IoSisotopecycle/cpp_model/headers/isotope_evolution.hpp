@@ -703,7 +703,9 @@ void iso_evo(
     auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
     cout << endl << "======================================================" << endl;
     cout <<         "=== Starting sulfur isotope evolution calculation ====" << endl;
-    cout << "start " << ctime(&now);  // includes newline
+    cout << "======================================================" << endl;
+    cout << "Start time: " << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S") << endl;
+
 
     // === TIME SETUP ===
     double time_step = t_step_Myr * 60.0 * 60.0 * 24.0 * 365.0 * 1.0e6;  // seconds per timestep
@@ -837,10 +839,7 @@ void iso_evo(
         F_ST.value = F_mass_i_min + F_mass_f.value * (F_mass_i_max - F_mass_i_min);
         F_ST.flag = "Y";
     }
-    // cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\n";
-    // cout << "HERE F_ST = " << F_ST.value << "\n";
-    // cout << "F_mass_i_min = " << F_mass_i_min << "\n";
-    // cout << "F_mass_i_max = " << F_mass_i_max << "\n";
+    
     double logF_ST, F_33R, F_34R, F_36R;
     double F_32T_i, F_33T_i, F_34T_i, F_36T_i;
     double F_33D, F_36D;
@@ -850,23 +849,6 @@ void iso_evo(
         F_32T_i, F_33T_i, F_34T_i, F_36T_i,
         F_33D, F_36D,
         F_32S, F_33S, F_34S, F_36S) = initial_reservoir(F_ST.value, F_33d, F_34d, F_36d, VCDT, MIF_eq);
-    
-    // cout << "logF_ST: " << logF_ST << endl;
-    // cout << "F_33R: " << F_33R << endl;
-    // cout << "F_34R: " << F_34R << endl;
-    // cout << "F_36R: " << F_36R << endl;
-    // cout << "F_32T_i: " << F_32T_i << endl;
-    // cout << "F_33T_i: " << F_33T_i << endl;
-    // cout << "F_34T_i: " << F_34T_i << endl;
-    // cout << "F_36T_i: " << F_36T_i << endl;
-    // cout << "F_33D: " << F_33D << endl;
-    // cout << "F_36D: " << F_36D << endl;
-    // cout << "F_32S: " << F_32S << endl;
-    // cout << "F_33S: " << F_33S << endl;
-    // cout << "F_34S: " << F_34S << endl;
-    // cout << "F_36S: " << F_36S << endl;
-
-    // cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << "\n";
 
     // -------------------------
     // CRUSTAL SULFATES INITIAL RESERVOIR
@@ -921,7 +903,6 @@ void iso_evo(
     double mb34S  = mass_balance(Io_34S_initial, Io_34S_initial);
     double mb36S  = mass_balance(Io_36S_initial, Io_36S_initial);
 
-    cout << "Initial F_34d = " << F_34d << "\n";
 
     // -------------------------
     // INITIAL TIME STEP
@@ -1010,8 +991,10 @@ void iso_evo(
     // Here we go...
     // ============================================================================
     // ============================================================================
-    cout << "HERE we start time looping" << endl;
-    for (int n = 1; n < end; ++n) {
+    // cout << "HERE we start time looping" << endl;
+    int total_steps = static_cast<int>(end_time_Myr / t_step_Myr);
+    for (int n = 1; n <= total_steps; ++n) { //updated to start at n=1 to match python version
+    // for (int n = 1; n < end; ++n) {
         // --------------------
         // 1. TIMESTEPS
         // --------------------
@@ -1020,15 +1003,15 @@ void iso_evo(
         
         // --------------------
         // debugging
-        if (n < 5) {
-            ostringstream oss_time, oss_F34d;
-            oss_time << fixed << setprecision(17) << t_s_Myr;
-            oss_F34d << fixed << setprecision(17) << F_34d;
+        // if (n < 5) {
+        //     ostringstream oss_time, oss_F34d;
+        //     oss_time << fixed << setprecision(17) << t_s_Myr;
+        //     oss_F34d << fixed << setprecision(17) << F_34d;
             
-            cout << endl;
-            cout << "Time: " << oss_time.str() << " Myr"
-                << " | F_34d: " << oss_F34d.str()
-                << " | Time: " << current_datetime_string() << endl;
+        //     cout << endl;
+        //     cout << "Time: " << oss_time.str() << " Myr"
+        //         << " | F_34d: " << oss_F34d.str()
+        //         << " | Time: " << current_datetime_string() << endl;
             // DEBUG_PRINT("time step (Myr): ", t_s_Myr);
             // DEBUG_PRINT("F_34d: ", F_34d);
             // DEBUG_PRINT("M_ST: ", M_ST.value);
@@ -1036,7 +1019,7 @@ void iso_evo(
             // DEBUG_PRINT("F_ST: ", F_ST.value);
             // DEBUG_PRINT("SS_ST: ", SS_ST.value);
             // DEBUG_PRINT("S_ST: ", S_ST.value);
-        }
+        // }
        
         
         // --------------------
@@ -1073,7 +1056,7 @@ void iso_evo(
                 resurf_cm_yr = 9.0;
                 }
             }
-        DEBUG_PRINT("resurf_cm_yr: ", resurf_cm_yr);
+        // DEBUG_PRINT("resurf_cm_yr: ", resurf_cm_yr);
         // --------------------
         // 3. MANTLE AND DEEP MANTLE MELTING (RATES)
         // --------------------
@@ -1388,12 +1371,12 @@ void iso_evo(
         // cout << "====>  F_34S: " <<  scientific << setprecision(16) << F_34S << endl;
         // cout << "====>  F_36S: " <<  scientific << setprecision(16) << F_36S << endl;
 
-        cout << "BEFORE F_ST.value: " << F_ST.value << endl;
+        // cout << "BEFORE F_ST.value: " << F_ST.value << endl;
         // cout << "The reservoir_isotope inputs are: " << endl;
         // cout << "-----> F_32S: " << scientific << setprecision(16) << F_32S << endl;
         // cout << "-----> F_33S: " << scientific << setprecision(16) << F_33S << endl;
         // cout << "-----> F_34S: " << scientific << setprecision(16) << F_34S << endl;
-        cout << "-----> F_36S: " << scientific << setprecision(16) << F_36S << endl;
+        // cout << "-----> F_36S: " << scientific << setprecision(16) << F_36S << endl;
         // cout << "-----> VCDT contents:" << endl;
         // for (const auto& [key, val] : VCDT) {
         //     cout << "        " << key << ": " << val << endl;
@@ -1407,7 +1390,7 @@ void iso_evo(
             reservoir_isotope(F_32S, F_33S, F_34S, F_36S,
                             VCDT, MIF_eq);
         
-        cout << "AFTER F_ST.value: " << F_ST.value << endl;
+        // cout << "AFTER F_ST.value: " << F_ST.value << endl;
 
         // Silicate + Sulfate (SS)
         SS_32S = silsulf(SS_32S, rs_32S, sq_32S, pl_32S);
@@ -1519,9 +1502,21 @@ void iso_evo(
 
         // Push the updated state to store results
         results.push_back(state);
-        if (n % 1000 == 0 || n == static_cast<int>(end_time_Myr / t_step_Myr) - 1) {
-            cout << "Step " << n << ", Time = " << t_s_Myr << " Myr, F_34d = " << F_34d << endl;
+        // if (n % 1000 == 0 || n == static_cast<int>(end_time_Myr / t_step_Myr) - 1) {
+        //     cout << "Last Step: " << n << ", Time = " << t_s_Myr << " Myr, F_34d = " << setprecision(16) << F_34d << endl;
+        // }
+        if (n == total_steps) {
+            cout << "Last step: " << n
+                << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
+                << " | F_34d = " << setprecision(16) << F_34d << endl;
         }
+        else if (n % 1000 == 0) {
+            cout << "Step: " << n
+                << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
+                << " | F_34d = " << setprecision(16) << F_34d << endl;
+        }
+
+
 
     }
 }

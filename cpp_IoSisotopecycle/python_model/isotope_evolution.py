@@ -427,8 +427,10 @@ def fractionate(constants,nr_step,nr_tol,guessx):
 ####################
 
 def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST,DM_33d,DM_34d,DM_36d,M_mass_f,M_mass_f_sil,M_ST,M_33d,M_34d,M_36d,F_mass_f,F_ST,F_33d,F_34d,F_36d,SS_mass_f,SS_ST,SS_33d,SS_34d,SS_36d,S_ST,S_33d,S_34d,S_36d,rate_f,oscillate,resurf_cm_yr,sil_mag_S,thick_C,f_S2,f_pl2mo,f_sq,f_deep,f_remobilised,f_pu):
-    
-    print("start",datetime.datetime.now())
+    print("======================================================")
+    print("=== Starting sulfur isotope evolution calculation ====")
+    print("======================================================")
+    print(f"Start time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     time_step = t_step_Myr*60.*60.*24.*365.*1.e6 # time step in s
     end = (end_time_Myr+t_step_Myr)/t_step_Myr
     end = int(end)
@@ -574,7 +576,7 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                          "","","","","","","","",""]])         
     results = pd.concat([results, results2], ignore_index=True)
     results.to_csv('time_evolution.csv', index=False, header=False)
-    print("Initial F_34d",F_34d)
+    # print("Initial F_34d",F_34d)
     # // Loop sections: 
     # // 1. timesteps
     # // 2. oscillating resufacing rate
@@ -597,16 +599,16 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
     # // 19. update reservoirs (M_XYS, DM_XYS, F_XYS, SS_XYS, S_XYS)
     # // 20. mass balance checks
     # // 21. store results in struct and push to vector
-
+    
     # // 1. timesteps
-    print("HERE we start time looping")
-    for n in range(1,end,1): 
+    # print("HERE we start time looping")
+    for n in range(1,end,1):
         t_s = n*time_step
         t_s_Myr = n*t_step_Myr
-        if n < 5:
-            F_34d_val = float(F_34d) if F_34d != '' else 0.0
-            print("\n")
-            print(f"Time: {float(t_s_Myr):.17f} Myr | F_34d: {F_34d_val:.17f} | Time: {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')}")
+        # if n < 5:
+        #     F_34d_val = float(F_34d) if F_34d != '' else 0.0
+        #     print("\n")
+        #     print(f"Time: {float(t_s_Myr):.17f} Myr | F_34d: {F_34d_val:.17f} | Time: {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')}")
             # print("     time step (Myr):  = ",t_s_Myr)
             # print("     F_34d:  = ",F_34d)
             # print("     M_ST:  = ",M_ST)
@@ -627,7 +629,7 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                 resurf_cm_yr = 1.
             elif t_s_Myr < 100. or t_s_Myr >= 200. and t_s_Myr < 300. or t_s_Myr >= 400. and t_s_Myr < 500. or t_s_Myr >= 600. and t_s_Myr < 700. or t_s_Myr >= 800. and t_s_Myr < 900. or t_s_Myr >= 1000. and t_s_Myr < 1100. or t_s_Myr >= 1200. and t_s_Myr < 1300. or t_s_Myr >= 1400. and t_s_Myr < 1500. or t_s_Myr >= 1600. and t_s_Myr < 1700. or t_s_Myr >= 1800. and t_s_Myr < 1900. or t_s_Myr >= 2000. and t_s_Myr < 2100. or t_s_Myr >= 2200. and t_s_Myr < 2300. or t_s_Myr >= 2400. and t_s_Myr < 2500. or t_s_Myr >= 2600. and t_s_Myr < 2700. or t_s_Myr >= 2800. and t_s_Myr < 2900. or t_s_Myr >= 3000. and t_s_Myr < 3100. or t_s_Myr >= 3200. and t_s_Myr < 3300. or t_s_Myr >= 3400. and t_s_Myr < 3500. or t_s_Myr >= 3600. and t_s_Myr < 3700. or t_s_Myr >= 3800. and t_s_Myr < 3900. or t_s_Myr >= 4000. and t_s_Myr < 4100. or t_s_Myr >= 4200. and t_s_Myr < 4300.:
                 resurf_cm_yr = 9.
-        print("     resurfacing rate (cm/yr):  = ",resurf_cm_yr)
+        # print("     resurfacing rate (cm/yr):  = ",resurf_cm_yr)
         # // 3. mantle and deep mantle melting (rates)
         # mantle melting
         sil_mag_m_yr = (resurf_cm_yr/(1.-f_pl2mo))*0.01 # silicate magmatism in m/yr
@@ -846,17 +848,18 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
         # print("====> F_34S: {:.16e}", F_34S)
         # print("====> F_36S: {:.16e}", F_36S)
 
-        print(f"BEFORE F_ST: {F_ST:.16e}")
+        # print(f"BEFORE F_ST: {F_ST:.16e}")
         # print("The reservoir_isotope inputs are: ")
         # print("-----> F_32S: {:.16e}", F_32S)
         # print("-----> F_33S: {:.16e}", F_33S)
         # print("-----> F_34S: {F_34S:.16e}", F_34S)
-        print(f"-----> F_36S: {F_36S:.16e}")
+        # print(f"-----> F_36S: {F_36S:.16e}")
         # print("-----> VCDT: {:.16e}", VCDT)
         # print("-----> MIF_eq: {:.16e}", MIF_eq)
+        
         F_33R, F_34R, F_36R, F_33d, F_34d, F_36d, F_33D, F_36D, F_ST, logF_ST = reservoir_isotope(F_32S, F_33S, F_34S, F_36S)
 
-        print(f"AFTER F_ST: {F_ST:.16e}")
+        # print(f"AFTER F_ST: {F_ST:.16e}")
 
         # SS = silicate + sulfate
         SS_32S = silsulf(SS_32S,rs_32S,sq_32S,pl_32S)
@@ -903,11 +906,20 @@ def iso_evo(t_step_Myr,end_time_Myr,nr_step,nr_tol,DM_mass_f,DM_mass_f_sil,DM_ST
                          M_36R, F_36R, SS_36R, S_36R,DM_36R,ao_36R,iS_36R,
                          a33_bu,a34_bu,a36_bu,a33_eb,a34_eb,a36_eb]]) 
         results = pd.concat([results, results2], ignore_index=True)
-        if(n % 1000==0):
+        # Save to CSV and print every 1000 steps or at the last step
+        if (n % 1000 == 0) or (n == end - 1):
             results.to_csv('time_evolution.csv', index=False, header=False)
-        if(n==(end-1.)):
-            results.to_csv('time_evolution.csv', index=False, header=False)
-            print("end",t_s_Myr,F_34d,datetime.datetime.now())
+            print(f"Last step: {n} | Time = {t_s_Myr:.1f} Myr | F_34d = {F_34d:.16f}")
+
+        #  if(n % 1000==0):
+        #     results.to_csv('time_evolution.csv', index=False, header=False)
+        # if(n==(end-1.)):
+        #     results.to_csv('time_evolution.csv', index=False, header=False)
+        #     # print("end",t_s_Myr,F_34d,datetime.datetime.now())
+        #     # print(f"Last step: {n} | Time = {t_s_Myr:.1f} Myr | F_34d = {F_34d:.4f}")
+        #     print(f"Last step: {n} | Time = {t_s_Myr:.1f} Myr | F_34d = {F_34d:.16f}")
+            
+
 
 ###############################            
 ### RAYLEIGHT BUT BOX MODEL ###  
