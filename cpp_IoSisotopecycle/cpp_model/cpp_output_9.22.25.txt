@@ -1,0 +1,69 @@
+gabrielnathan@GIJN cpp_model % make
+g++ -std=c++17 -O2 -Iheaders -o run_model running_model.cpp
+gabrielnathan@GIJN cpp_model % ./run_model 
+
+=== C++ MODEL INPUTS ===
+t_step_Myr=0.1, end_time_Myr=4570.1, nr_step=1, nr_tol=100000
+DM_mass_f=(N,0), DM_mass_f_sil=(N,0), DM_ST=(N,0), DM_33d=0, DM_34d=0, DM_36d=0
+M_mass_f=(Y,0.1257), M_mass_f_sil=(Y,0.1257), M_ST=(N,0), M_33d=0, M_34d=0, M_36d=0
+F_mass_f=(N,0), F_ST=(N,0), F_33d=0, F_34d=0, F_36d=0
+SS_mass_f=(N,0), SS_ST=(N,0), SS_33d=0, SS_34d=0, SS_36d=0
+S_ST=(N,0), S_33d=0, S_34d=0, S_36d=0
+rate_f: ec=1 rc=1 ac=1 ei=1 ed=1 pi=1 pd=1 
+oscillate=N, resurf_cm_yr=1, sil_mag_S=0.001, thick_C=40000
+f_S2=0.2, f_pl2mo=0.8, f_sq=0.25, f_deep=0, f_remobilised=1, f_pu=0.5
+===========================
+
+
+======================================================
+=== Starting sulfur isotope evolution calculation ====
+======================================================
+Start time: 2025-09-22 17:31:27
+Step: 1000 | Time = 100.0 Myr | F_34d = 6.4407206087642397
+Step: 2000 | Time = 200.0 Myr | F_34d = 8.0582879518364692
+Step: 3000 | Time = 300.0 Myr | F_34d = 9.7149948367746113
+Step: 4000 | Time = 400.0 Myr | F_34d = 11.4127131775220896
+Step: 5000 | Time = 500.0 Myr | F_34d = 13.1534507436184924
+Step: 6000 | Time = 600.0 Myr | F_34d = 14.9393645454705819
+Step: 7000 | Time = 700.0 Myr | F_34d = 16.7727759029915937
+Step: 8000 | Time = 800.0 Myr | F_34d = 18.6561874576098958
+Step: 9000 | Time = 900.0 Myr | F_34d = 20.5923024354088113
+Step: 10000 | Time = 1000.0 Myr | F_34d = 22.5840465277161542
+Step: 11000 | Time = 1100.0 Myr | F_34d = 24.6345928265314491
+Step: 12000 | Time = 1200.0 Myr | F_34d = 26.7473903399703481
+Step: 13000 | Time = 1300.0 Myr | F_34d = 28.9261967209337065
+Step: 14000 | Time = 1400.0 Myr | F_34d = 31.1751159766821786
+Step: 15000 | Time = 1500.0 Myr | F_34d = 33.4986420949741870
+Step: 16000 | Time = 1600.0 Myr | F_34d = 35.9017097336012014
+Step: 17000 | Time = 1700.0 Myr | F_34d = 38.3897533877155155
+Step: 18000 | Time = 1800.0 Myr | F_34d = 40.9687767904381133
+Step: 19000 | Time = 1900.0 Myr | F_34d = 43.6454347406452712
+Step: 20000 | Time = 2000.0 Myr | F_34d = 46.4271301196697266
+Step: 21000 | Time = 2100.0 Myr | F_34d = 49.3221296009472212
+Step: 22000 | Time = 2200.0 Myr | F_34d = 52.3397025351763503
+Step: 23000 | Time = 2300.0 Myr | F_34d = 55.4902887974439878
+Step: 24000 | Time = 2400.0 Myr | F_34d = 58.7857031378553714
+Step: 25000 | Time = 2500.0 Myr | F_34d = 62.2393859672988796
+Step: 26000 | Time = 2600.0 Myr | F_34d = 65.8667138056099333
+Step: 27000 | Time = 2700.0 Myr | F_34d = 69.8070537224891012
+Step: 28000 | Time = 2800.0 Myr | F_34d = 74.0081360047628465
+Step: 29000 | Time = 2900.0 Myr | F_34d = 78.4559996043391124
+Step: 30000 | Time = 3000.0 Myr | F_34d = 83.1802311851352272
+Step: 31000 | Time = 3100.0 Myr | F_34d = 88.2159959911781897
+Step: 32000 | Time = 3200.0 Myr | F_34d = 93.6055228525743814
+Step: 33000 | Time = 3300.0 Myr | F_34d = 99.4001159495464748
+Step: 34000 | Time = 3400.0 Myr | F_34d = 105.6629338316456455
+Step: 35000 | Time = 3500.0 Myr | F_34d = 112.4729144674042089
+Step: 36000 | Time = 3600.0 Myr | F_34d = 119.9304621532775030
+Step: 37000 | Time = 3700.0 Myr | F_34d = 128.1659349275539626
+Step: 38000 | Time = 3800.0 Myr | F_34d = 137.3527608813867857
+Step: 39000 | Time = 3900.0 Myr | F_34d = 147.7285692977154667
+Step: 40000 | Time = 4000.0 Myr | F_34d = 159.6310011280706078
+Step: 41000 | Time = 4100.0 Myr | F_34d = 173.5623363918217592
+Step: 42000 | Time = 4200.0 Myr | F_34d = 190.3158933558870558
+Step: 43000 | Time = 4300.0 Myr | F_34d = 211.2510137979627700
+Step: 44000 | Time = 4400.0 Myr | F_34d = 238.9860104028157650
+Step: 45000 | Time = 4500.0 Myr | F_34d = 279.5382855447167003
+
+Execution time: 0.2064694050000000 seconds
+gabrielnathan@GIJN cpp_model % 

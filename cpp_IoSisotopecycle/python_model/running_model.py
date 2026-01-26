@@ -10,7 +10,7 @@ import time
 ##################################################################
 
 t_step_Myr = 1.e-1 # time step in Myr
-end_time_Myr = 200.1#4570 # end time in Myr
+end_time_Myr = 4570.1 # end time in Myr
 nr_step = 1.
 nr_tol = 1.e5
 

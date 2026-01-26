@@ -1515,6 +1515,13 @@ void iso_evo(
                 << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
                 << " | F_34d = " << setprecision(16) << F_34d << endl;
         }
+        else if (n == total_steps) {
+            cout << "Last step: " << n
+                << " | Time = " << fixed << setprecision(1) << t_s_Myr << " Myr"
+                << " | F_34d = " << setprecision(16) << F_34d << endl;
+
+        }
+        
 
 
 
