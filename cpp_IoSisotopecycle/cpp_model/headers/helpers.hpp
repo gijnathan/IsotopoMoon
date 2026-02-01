@@ -2,8 +2,14 @@
 #define HELPERS_HPP
 
 #include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 #include <chrono>
 #include <ctime>
+#include <stdexcept>
+
 using namespace std;
 
 inline string current_datetime_string() {
@@ -84,6 +90,8 @@ struct SulfurState {
     double a33_eb = 0.0, a34_eb = 0.0, a36_eb = 0.0;
 
 };
+
+// Function to update SulfurState struct
 
 void update_sulfur_state(SulfurState& state,
                          double t_step, double t_step_Myr, double S_conc_M,
@@ -175,6 +183,346 @@ void update_sulfur_state(SulfurState& state,
     state.a33_bu = a33_bu; state.a34_bu = a34_bu; state.a36_bu = a36_bu;
     state.a33_eb = a33_eb; state.a34_eb = a34_eb; state.a36_eb = a36_eb;
 };
+
+
+// helpers to write csv rows with padding
+inline void write_csv_row_padded(ofstream& out,
+                                const vector<string>& fields,
+                                size_t total_cols)
+{
+    // write given fields
+    for (size_t i = 0; i < fields.size(); ++i) {
+        if (i) out << ",";
+        out << fields[i];
+    }
+    // pad with empty fields to reach total_cols
+    for (size_t i = fields.size(); i < total_cols; ++i) {
+        out << ",";
+        // empty cell => nothing between commas
+    }
+    out << "\n";
+}
+
+inline string csv_num(double v, int prec = 16) {
+    ostringstream oss;
+    oss.setf(ios::fixed);
+    oss << setprecision(prec) << v;
+    return oss.str();
+}
+
+
+
+/// make a Python-like header for sulfur isotope CSV output for what is being output each timestep
+inline vector<string> sulfur_python_like_header() {
+    return {
+        "time step","time (Myr)","[S] mantle",
+        "d34S M","d34S F","d34S SS","d34S S","d34S DM","d34S og","d34S iS",
+        "d33S M","d33S F","d33S SS","d33S S","d33S DM","d33S og","d33S iS",
+        "d36S M","d36S F","d36S SS","d36S S","d36S DM","d36S og","d36S iS",
+        "D33S M","D33S F","D33S SS","D33S S","D33S DM","D33S og","D33S iS",
+        "D36S M","D36S F","D36S SS","D36S S","D36S DM","D36S og","D36S iS",
+        "ST M","ST F","ST SS","ST S","ST DM",
+        "log ST M","log ST F","log ST SS","log ST S","log ST DM",
+        "F mo","F fr","F pr","F pu","F sn","F pd","F hg","F bu","F pl","F rs","F sq","F ao","F dm",
+        "mo/mo+ca","bu/bu+pl",
+        "mbST","mb32","mb33","mb34","mb36","",
+        "R33 M","R33 F","R33 SS","R33 S","R33 DM","R33 og","R33 iS",
+        "R34 M","R34 F","R34 SS","R34 S","R34 DM","R34 og","R34 iS",
+        "R36 M","R36 F","R36 SS","R36 S","R36 DM","R36 og","R36 iS",
+        "a33_bu","a34_bu","a36_bu",
+        "a33_escape-burial","a34_escape-burial","a36_escape-burial",
+        "","",""  // <- your Python header shows trailing ",,,"
+    };
+}
+
+
+/// preamble that has the input parameters at the top of the CSV
+inline void write_python_like_preamble(ofstream& out,
+                                      const vector<string>& main_header,
+                                      // your 16 preamble values:
+                                      double rate_pd, double rate_pi, double rate_ei, double rate_ed, double rate_ac,
+                                      double rate_rc, double rate_ec,
+                                      double resurf_cm_yr, double sil_mag_S, double thick_C,
+                                      double f_remobilised, double f_S2, double f_pl2mo, double f_sq, double f_deep,
+                                      double M_mass)
+{
+    size_t total_cols = main_header.size();
+
+    vector<string> labels = {
+        "rate factor pd","rate factor pi","rate factor ei","rate factor ed","rate factor ac",
+        "rate factor rc","rate factor ec","resurfacing rate (cm/yr)","sil mag S (wf)",
+        "crustal thickness (m)","fraction of f_crust_returned that is remolised","S2 to SO2",
+        "plutons from mantle melting","sulfate sequestration","deep mantle - fraction of mantle melting",
+        "mass silicate mantle"
+    };
+
+    vector<string> values = {
+        csv_num(rate_pd), csv_num(rate_pi), csv_num(rate_ei), csv_num(rate_ed), csv_num(rate_ac),
+        csv_num(rate_rc), csv_num(rate_ec),
+        csv_num(resurf_cm_yr), csv_num(sil_mag_S), csv_num(thick_C),
+        csv_num(f_remobilised), csv_num(f_S2), csv_num(f_pl2mo), csv_num(f_sq), csv_num(f_deep),
+        // IMPORTANT: if you want scientific notation like Python sometimes produces,
+        // you can special-case M_mass formatting. Otherwise fixed is fine.
+        csv_num(M_mass)
+    };
+
+    // Row 0: labels + padding commas
+    write_csv_row_padded(out, labels, total_cols);
+
+    // Row 1: values + padding commas
+    write_csv_row_padded(out, values, total_cols);
+
+    // Row 2: main header (already full width)
+    write_csv_row_padded(out, main_header, total_cols);
+}
+
+// INIITIAL STATE OUTPUT of SulfurState in Python-like format
+inline vector<string> sulfur_initial_row_python_like(double t_step, double t_Myr,
+                                                     double S_conc_M,
+                                                     double M_34d, double M_33d, double M_36d,
+                                                     double S_34d, double S_33d, double S_36d,
+                                                     double M_33D, double M_36D,
+                                                     double S_33D, double S_36D,
+                                                     double M_ST, double S_ST,
+                                                     double logM_ST, double logS_ST,
+                                                     double mbST) {
+    vector<string> row;
+
+    // time + conc
+    row.push_back(csv_num(t_step));
+    row.push_back(csv_num(t_Myr));
+    row.push_back(csv_num(S_conc_M));
+
+    // d34S M, F, SS, S, DM, og, iS  (Python uses many blanks here)
+    row.push_back(csv_num(M_34d));
+    row.push_back(""); // F_34d
+    row.push_back(""); // SS_34d
+    row.push_back(csv_num(S_34d));
+    row.push_back(""); // DM_34d
+    row.push_back(""); // og
+    row.push_back(""); // iS
+
+    // d33S
+    row.push_back(csv_num(M_33d));
+    row.push_back("");
+    row.push_back("");
+    row.push_back(csv_num(S_33d));
+    row.push_back("");
+    row.push_back("");
+    row.push_back("");
+
+    // d36S
+    row.push_back(csv_num(M_36d));
+    row.push_back("");
+    row.push_back("");
+    row.push_back(csv_num(S_36d));
+    row.push_back("");
+    row.push_back("");
+    row.push_back("");
+
+    // D33S
+    row.push_back(csv_num(M_33D));
+    row.push_back("");
+    row.push_back("");
+    row.push_back(csv_num(S_33D));
+    row.push_back("");
+    row.push_back("");
+    row.push_back("");
+
+    // D36S
+    row.push_back(csv_num(M_36D));
+    row.push_back("");
+    row.push_back("");
+    row.push_back(csv_num(S_36D));
+    row.push_back("");
+    row.push_back("");
+    row.push_back("");
+
+    // ST M, F, SS, S, DM
+    row.push_back(csv_num(M_ST));
+    row.push_back("0.0");
+    row.push_back("0.0");
+    row.push_back(csv_num(S_ST));
+    row.push_back("0.0");
+
+    // log ST M, F, SS, S, DM
+    row.push_back(csv_num(logM_ST));
+    row.push_back("");
+    row.push_back("");
+    row.push_back(csv_num(logS_ST));
+    row.push_back("");
+
+    // Fluxes F mo..F dm (13 fields) -> blanks like python
+    for (int i = 0; i < 13; i++) row.push_back("");
+
+    // mo/mo+ca, bu/bu+pl
+    row.push_back("");
+    row.push_back("");
+
+    // mbST, mb32, mb33, mb34, mb36, blank
+    row.push_back(csv_num(mbST));
+    row.push_back(""); row.push_back(""); row.push_back(""); row.push_back("");
+    row.push_back("");
+
+    // R33, R34, R36 blocks (21 fields total) -> blanks
+    for (int i = 0; i < 21; i++) row.push_back("");
+
+    // a33_bu,a34_bu,a36_bu,a33_eb,a34_eb,a36_eb
+    for (int i = 0; i < 6; i++) row.push_back("");
+
+    // trailing ",,,"
+    row.push_back(""); row.push_back(""); row.push_back("");
+
+    return row;
+}
+
+
+/// Convert one SulfurState to one "Python-like" CSV row (strings), matching the header ordering.
+/// NOTE: We fill "og" columns with blanks "" (like your Python output),
+/// and we add 3 trailing blanks to match the header's final ",,,".
+inline vector<string> sulfur_state_to_python_like_row(const SulfurState& s) {
+    vector<string> row;
+
+    // time + conc
+    row.push_back(csv_num(s.t_step));
+    row.push_back(csv_num(s.t_step_Myr));
+    row.push_back(csv_num(s.S_conc_M));
+
+    // d34S: M,F,SS,S,DM,og(blank),iS
+    row.push_back(csv_num(s.M_34d));
+    row.push_back(csv_num(s.F_34d));
+    row.push_back(csv_num(s.SS_34d));
+    row.push_back(csv_num(s.S_34d));
+    row.push_back(csv_num(s.DM_34d));
+    row.push_back("");                 // d34S og (blank)
+    row.push_back(csv_num(s.iS_34d));   // d34S iS
+
+    // d33S
+    row.push_back(csv_num(s.M_33d));
+    row.push_back(csv_num(s.F_33d));
+    row.push_back(csv_num(s.SS_33d));
+    row.push_back(csv_num(s.S_33d));
+    row.push_back(csv_num(s.DM_33d));
+    row.push_back("");                 // d33S og
+    row.push_back(csv_num(s.iS_33d));   // d33S iS
+
+    // d36S
+    row.push_back(csv_num(s.M_36d));
+    row.push_back(csv_num(s.F_36d));
+    row.push_back(csv_num(s.SS_36d));
+    row.push_back(csv_num(s.S_36d));
+    row.push_back(csv_num(s.DM_36d));
+    row.push_back("");                 // d36S og
+    row.push_back(csv_num(s.iS_36d));   // d36S iS
+
+    // D33S
+    row.push_back(csv_num(s.M_33D));
+    row.push_back(csv_num(s.F_33D));
+    row.push_back(csv_num(s.SS_33D));
+    row.push_back(csv_num(s.S_33D));
+    row.push_back(csv_num(s.DM_33D));
+    row.push_back("");                 // D33S og
+    row.push_back(csv_num(s.iS_33D));   // D33S iS
+
+    // D36S
+    row.push_back(csv_num(s.M_36D));
+    row.push_back(csv_num(s.F_36D));
+    row.push_back(csv_num(s.SS_36D));
+    row.push_back(csv_num(s.S_36D));
+    row.push_back(csv_num(s.DM_36D));
+    row.push_back("");                 // D36S og
+    row.push_back(csv_num(s.iS_36D));   // D36S iS
+
+    // ST
+    row.push_back(csv_num(s.M_ST));
+    row.push_back(csv_num(s.F_ST));
+    row.push_back(csv_num(s.SS_ST));
+    row.push_back(csv_num(s.S_ST));
+    row.push_back(csv_num(s.DM_ST));
+
+    // log ST
+    row.push_back(csv_num(s.logM_ST));
+    row.push_back(csv_num(s.logF_ST));
+    row.push_back(csv_num(s.logSS_ST));
+    row.push_back(csv_num(s.logS_ST));
+    row.push_back(csv_num(s.logDM_ST));
+
+    // Fluxes
+    row.push_back(csv_num(s.mo_F));
+    row.push_back(csv_num(s.fr_F));
+    row.push_back(csv_num(s.pr_F));
+    row.push_back(csv_num(s.pu_F));
+    row.push_back(csv_num(s.sn_F));
+
+    row.push_back(csv_num(s.pd_F));
+    row.push_back(csv_num(s.hg_F));
+    row.push_back(csv_num(s.bu_F));
+    row.push_back(csv_num(s.pl_F));
+    row.push_back(csv_num(s.rs_F));
+
+    row.push_back(csv_num(s.sq_F));
+    row.push_back(csv_num(s.ao_F));
+    row.push_back(csv_num(s.dm_F));
+
+    // ratios
+    row.push_back(csv_num(s.mo_mo_ca));
+    row.push_back(csv_num(s.bu_bu_pl));
+
+    // mass balance + blank column
+    row.push_back(csv_num(s.mbST));
+    row.push_back(csv_num(s.mb32S));
+    row.push_back(csv_num(s.mb33S));
+    row.push_back(csv_num(s.mb34S));
+    row.push_back(csv_num(s.mb36S));
+    row.push_back(""); // blank column after mb36
+
+    // R33: M,F,SS,S,DM,og(blank),iS
+    row.push_back(csv_num(s.M_33R));
+    row.push_back(csv_num(s.F_33R));
+    row.push_back(csv_num(s.SS_33R));
+    row.push_back(csv_num(s.S_33R));
+    row.push_back(csv_num(s.DM_33R));
+    row.push_back(csv_num(s.ao_33R));  // you used ao_33R as "og" analog in your later Python
+    row.push_back(csv_num(s.iS_33R));
+
+    // R34
+    row.push_back(csv_num(s.M_34R));
+    row.push_back(csv_num(s.F_34R));
+    row.push_back(csv_num(s.SS_34R));
+    row.push_back(csv_num(s.S_34R));
+    row.push_back(csv_num(s.DM_34R));
+    row.push_back(csv_num(s.ao_34R));
+    row.push_back(csv_num(s.iS_34R));
+
+    // R36
+    row.push_back(csv_num(s.M_36R));
+    row.push_back(csv_num(s.F_36R));
+    row.push_back(csv_num(s.SS_36R));
+    row.push_back(csv_num(s.S_36R));
+    row.push_back(csv_num(s.DM_36R));
+    row.push_back(csv_num(s.ao_36R));
+    row.push_back(csv_num(s.iS_36R));
+
+    // alpha terms
+    row.push_back(csv_num(s.a33_bu));
+    row.push_back(csv_num(s.a34_bu));
+    row.push_back(csv_num(s.a36_bu));
+
+    row.push_back(csv_num(s.a33_eb));
+    row.push_back(csv_num(s.a34_eb));
+    row.push_back(csv_num(s.a36_eb));
+
+    // match your header's trailing ",,,"
+    row.push_back("");
+    row.push_back("");
+    row.push_back("");
+
+    return row;
+}
+
+
+
+
 
 #define DEBUG_PRINT(label, value) \
     cout << "     " << label << " = " << setprecision(17) << value << endl; 

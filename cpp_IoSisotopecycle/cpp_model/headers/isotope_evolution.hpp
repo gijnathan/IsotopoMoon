@@ -904,6 +904,25 @@ void iso_evo(
     double mb36S  = mass_balance(Io_36S_initial, Io_36S_initial);
 
 
+    // // SETUP OUTPUT FILE: 
+    ofstream out("time_evolution_cpp.txt");
+    // if (!out) throw runtime_error("Could not open output file.");
+
+    // // Build the Python-like header (determines total columns)
+    vector<string> header = sulfur_python_like_header();
+
+    // // Write the first 3 rows (rate-factor labels, values, then main header)
+    write_python_like_preamble(out, header,
+        rate_f.at("pd"), rate_f.at("pi"), rate_f.at("ei"), rate_f.at("ed"), rate_f.at("ac"),
+        rate_f.at("rc"), rate_f.at("ec"),
+        resurf_cm_yr, sil_mag_S, thick_C,
+        f_remobilised, f_S2, f_pl2mo, f_sq, f_deep,
+        M_mass
+    );
+
+
+
+
     // -------------------------
     // INITIAL TIME STEP
     // -------------------------
@@ -912,6 +931,22 @@ void iso_evo(
     double t_s = static_cast<double>(n) * t_step_Myr;     // time in Myr
     double t_s_Myr = t_s;                                  // (duplicate for clarity with Python)
     
+    // // --- write initial timestep row (n=0) like Python ---
+    vector<string> init_row = sulfur_initial_row_python_like(
+        0.0, t_s_Myr,
+        S_conc_M,
+        M_34d, M_33d, M_36d,
+        S_34d, S_33d, S_36d,
+        M_33D, M_36D,
+        S_33D, S_36D,
+        M_ST.value, S_ST.value,
+        logM_ST, logS_ST,
+        mbST
+    );
+
+    write_csv_row_padded(out, init_row, header.size());
+
+
     // IN PYTHON THE RESULTS ARE STORED IN A DATAFRAME LIKE THIS: 
     // # set up results table
     // results = pd.DataFrame([["rate factor pd","rate factor pi","rate factor ei","rate factor ed","rate factor ac",
@@ -1498,10 +1533,14 @@ void iso_evo(
             a33_eb, a34_eb, a36_eb
         );
 
+        write_csv_row_padded(out, sulfur_state_to_python_like_row(state), header.size());
+
+        if (n % 1000 == 0) out.flush();  // optional but nice
 
 
-        // Push the updated state to store results
-        results.push_back(state);
+        // Push the updated state to store results in RAM. commment out if you don't want to store full results in RAM during calculation
+        // results.push_back(state);
+
         // if (n % 1000 == 0 || n == static_cast<int>(end_time_Myr / t_step_Myr) - 1) {
         //     cout << "Last Step: " << n << ", Time = " << t_s_Myr << " Myr, F_34d = " << setprecision(16) << F_34d << endl;
         // }
