@@ -1,0 +1,44 @@
+t_step_Myr = 1e-1
+end_time_Myr = 4570.1
+nr_step = 1.0
+nr_tol = 1e5
+
+DM_mass_f = N,0
+DM_mass_f_sil = N,0
+DM_ST = N,0
+DM_33d = 0
+DM_34d = 0
+DM_36d = 0
+
+M_mass_f = Y,0.1257
+M_mass_f_sil = Y,0.1257
+M_ST = N,0
+M_33d = 0
+M_34d = 0
+M_36d = 0
+
+MIF_eq = FW2003_pg3
+nofrac = no
+MAF = no
+
+oscillate = N
+resurf_cm_yr = 1.0
+sil_mag_S = 0.001
+thick_C = 40000.0
+
+f_S2 = 0.2
+f_pl2mo = 0.8
+f_sq = 0.25
+f_deep = 0.0
+f_remobilised = 1.0
+f_pu = 0.5
+
+rate_f.pd = 1.0
+rate_f.pi = 1.0
+rate_f.ei = 1.0
+rate_f.ed = 1.0
+rate_f.ac = 1.0
+rate_f.rc = 1.0
+rate_f.ec = 1.0
+
+# mass silicate mantle (from CSV): 6.82E+22
