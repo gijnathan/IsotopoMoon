@@ -16,3 +16,21 @@ __pycache__/
 # VS Code config
 .vscode/
 
+# build artifacts
+run_model
+run_model_input
+*.o
+*.obj
+*.out
+*.exe
+
+# generated outputs / results
+output/
+results/
+*.csv
+*.tsv
+*.dat
+*.log
+
+# large generated text dumps
+*time_evolution*
